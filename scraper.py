@@ -3,7 +3,6 @@ from urllib.parse import urlparse
 from bs4 import BeautifulSoup
 import lxml
 
-# crawled = []
 
 def scraper(url, resp):
     links = extract_next_links(url, resp)
@@ -58,11 +57,18 @@ def is_valid(url):
                 index = line.find("User-agent: ")
                 if index != -1:
                     robot = line[len("User-agent: "):]
-                if robot == USERAGENT or '*': # dk if correct check later
-                    #look at disallow statements
-                    disallow = True
-                    #maybe set a boolean to true so we know to check?
-                ...
+                    if robot == USERAGENT or '*': # dk if correct check later
+                        #look at disallow statements
+                        check_for_disallow = True
+                        #maybe set a boolean to true so we know to check?
+            else:
+                index = line.find("Disallow: ")
+                if index != -1:
+                    disallow = line[len("Disallow: "):]
+                    if(disallow == ""): return True #it is allowed to all parts of the website
+                    elif(disallow == "/"): return False #it is not allowed to any parts of the webiste
+                else:
+                    check_for_disallow = False
             line = file.readline()
         
         # parse it by splitting? (find a different way later)
