@@ -15,6 +15,10 @@ def extract_next_links(url, resp):
     #         resp.raw_response.url: the url, again
     #         resp.raw_response.content: the content of the page!
     # Return a list with the hyperlinks (as strings) scrapped from resp.raw_response.content
+
+    #if it is permitted to crawl the url, parse resp.raw_response.content for links
+    #the urls in the list have to be defragmented which can be done with urlparse.urldefrag
+    #make sure to change relative urls to absolute urls (look into urljoin)
     return list()
 
 def is_valid(url):
@@ -27,12 +31,13 @@ def is_valid(url):
             return False
         # parse the netloc to check if the domain is ics.uci.edu, cs.uci.edu, informatics.uci.edu, stat.uci.edu
         # consider splitting by . and checking the last 3 elems in the list to see if it is a valid domain
-        # may consider parsing in a differnt way later
+        # may consider parsing in a different way later
         netloc_parse = parsed.netloc.split('.')
         domain = netloc_parse[-3:]
         if domain != ['ics', 'uci', 'edu'] or domain != ['cs', 'uci', 'edu'] \
             or domain != ['informatics', 'uci', 'edu'] or domain != ['stat', 'uci', 'edu']:
             return False
+        #check the robots.txt file (does the website permit the crawl)
         return not re.match(
             r".*\.(css|js|bmp|gif|jpe?g|ico"
             + r"|png|tiff?|mid|mp2|mp3|mp4"
