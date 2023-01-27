@@ -1,5 +1,9 @@
 import re
 from urllib.parse import urlparse
+from bs4 import BeautifulSoup
+import lxml
+
+# crawled = []
 
 def scraper(url, resp):
     links = extract_next_links(url, resp)
@@ -11,15 +15,21 @@ def extract_next_links(url, resp):
     # resp.url: the actual url of the page
     # resp.status: the status code returned by the server. 200 is OK, you got the page. Other numbers mean that there was some kind of problem.
     # resp.error: when status is not 200, you can check the error here, if needed.
+    if resp.status != 200:
+        print(resp.error)
     # resp.raw_response: this is where the page actually is. More specifically, the raw_response has two parts:
     #         resp.raw_response.url: the url, again
     #         resp.raw_response.content: the content of the page!
     # Return a list with the hyperlinks (as strings) scrapped from resp.raw_response.content
 
     #if it is permitted to crawl the url, parse resp.raw_response.content for links
+    urls = list()
+    if is_valid(resp.raw_response.url):
+        # parse resp.raw_response.content look into BeautifulSoup, lxml
+        urls.append(...)
     #the urls in the list have to be defragmented which can be done with urlparse.urldefrag
     #make sure to change relative urls to absolute urls (look into urljoin)
-    return list()
+    return urls
 
 def is_valid(url):
     # Decide whether to crawl this url or not. 
@@ -29,15 +39,34 @@ def is_valid(url):
         parsed = urlparse(url)
         if parsed.scheme not in set(["http", "https"]):
             return False
-        # parse the netloc to check if the domain is ics.uci.edu, cs.uci.edu, informatics.uci.edu, stat.uci.edu
+        # parse the hostname to check if the domain is ics.uci.edu, cs.uci.edu, informatics.uci.edu, stat.uci.edu
         # consider splitting by . and checking the last 3 elems in the list to see if it is a valid domain
         # may consider parsing in a different way later
-        netloc_parse = parsed.netloc.split('.')
-        domain = netloc_parse[-3:]
+        hostname_parse = parsed.hostname.split('.')
+        domain = hostname_parse[-3:]
         if domain != ['ics', 'uci', 'edu'] or domain != ['cs', 'uci', 'edu'] \
             or domain != ['informatics', 'uci', 'edu'] or domain != ['stat', 'uci', 'edu']:
             return False
         #check the robots.txt file (does the website permit the crawl)
+        parsed.replace(path='robots.txt')
+        # access the file
+        file = open(parsed, "r")
+        line = file.readline()
+        check_for_disallow = False
+        while line:
+            if(check_for_disallow == False):
+                index = line.find("User-agent: ")
+                if index != -1:
+                    robot = line[len("User-agent: "):]
+                if robot == USERAGENT or '*': # dk if correct check later
+                    #look at disallow statements
+                    disallow = True
+                    #maybe set a boolean to true so we know to check?
+                ...
+            line = file.readline()
+        
+        # parse it by splitting? (find a different way later)
+        # check user agent and disallow
         return not re.match(
             r".*\.(css|js|bmp|gif|jpe?g|ico"
             + r"|png|tiff?|mid|mp2|mp3|mp4"
