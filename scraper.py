@@ -2,7 +2,7 @@ import re
 from urllib.parse import urlparse
 from bs4 import BeautifulSoup
 import lxml
-from urllib.request import urlopen
+import urllib.robotparser
 
 
 def scraper(url, resp):
@@ -55,6 +55,16 @@ def is_valid(url):
         parsed = urlparse(url)
         if parsed.scheme not in set(["http", "https"]):
             return False
+        if not re.match(
+            r".*\.(css|js|bmp|gif|jpe?g|ico"
+            + r"|png|tiff?|mid|mp2|mp3|mp4"
+            + r"|wav|avi|mov|mpeg|ram|m4v|mkv|ogg|ogv|pdf"
+            + r"|ps|eps|tex|ppt|pptx|doc|docx|xls|xlsx|names"
+            + r"|data|dat|exe|bz2|tar|msi|bin|7z|psd|dmg|iso"
+            + r"|epub|dll|cnf|tgz|sha1"
+            + r"|thmx|mso|arff|rtf|jar|csv"
+            + r"|rm|smil|wmv|swf|wma|zip|rar|gz)$", parsed.path.lower()):
+            return False
         # parse the hostname to check if the domain is ics.uci.edu, cs.uci.edu, informatics.uci.edu, stat.uci.edu
         # consider splitting by . and checking the last 3 elems in the list to see if it is a valid domain
         # may consider parsing in a different way later
@@ -67,37 +77,40 @@ def is_valid(url):
         #check the robots.txt file (does the website permit the crawl)
         replace = parsed.replace(path='robots.txt')
         # access the file
-        check_for_disallow = False
-        with urlopen(replace) as response:
-            file = response.read()
-            lines = file.split('\n')
-            for line in lines:
-                if line.startswith("User-agent: "):
-                    robot = line[len("User-agent: "):]
-                    if robot == USERAGENT or '*': # dk if correct check later
-                        #look at disallow statements
-                        check_for_disallow = True
-                        #maybe set a boolean to true so we know to check?
-                    else: check_for_disallow = False
-                if line.startswith("Disallow:") and check_for_disallow == True:
-                    disallow = line[len("Disallow: "):]
-                    check = urlparse.urljoin(url, disallow)
-                    if(disallow == ""): return True #it is allowed to all parts of the website
-                    elif(disallow == "/"): return False #it is not allowed to any parts of the webiste
-                    elif(check == url): return False
+        rp = urllib.robotparser.RobotFileParser()
+        rp.set_url(replace)
+        if rp.can_fetch('*', url) or rp.can_fetch(USERAGENT, url): return True
+        # check_for_disallow = False
+        # with urlopen(replace) as response:
+        #     file = response.read()
+        #     lines = file.split('\n')
+        #     for line in lines:
+        #         if line.startswith("User-agent: "):
+        #             robot = line[len("User-agent: "):]
+        #             if robot == USERAGENT or '*': # dk if correct check later
+        #                 #look at disallow statements
+        #                 check_for_disallow = True
+        #                 #maybe set a boolean to true so we know to check?
+        #             else: check_for_disallow = False
+        #         if line.startswith("Disallow:") and check_for_disallow == True:
+        #             disallow = line[len("Disallow: "):]
+        #             check = urlparse.urljoin(url, disallow)
+        #             if(disallow == ""): return True #it is allowed to all parts of the website
+        #             elif(disallow == "/"): return False #it is not allowed to any parts of the webiste
+        #             elif(check == url): return False
             # look at sitemaps
         
         # parse it by splitting? (find a different way later)
         # check user agent and disallow
-        return not re.match(
-            r".*\.(css|js|bmp|gif|jpe?g|ico"
-            + r"|png|tiff?|mid|mp2|mp3|mp4"
-            + r"|wav|avi|mov|mpeg|ram|m4v|mkv|ogg|ogv|pdf"
-            + r"|ps|eps|tex|ppt|pptx|doc|docx|xls|xlsx|names"
-            + r"|data|dat|exe|bz2|tar|msi|bin|7z|psd|dmg|iso"
-            + r"|epub|dll|cnf|tgz|sha1"
-            + r"|thmx|mso|arff|rtf|jar|csv"
-            + r"|rm|smil|wmv|swf|wma|zip|rar|gz)$", parsed.path.lower())
+        # return not re.match(
+        #     r".*\.(css|js|bmp|gif|jpe?g|ico"
+        #     + r"|png|tiff?|mid|mp2|mp3|mp4"
+        #     + r"|wav|avi|mov|mpeg|ram|m4v|mkv|ogg|ogv|pdf"
+        #     + r"|ps|eps|tex|ppt|pptx|doc|docx|xls|xlsx|names"
+        #     + r"|data|dat|exe|bz2|tar|msi|bin|7z|psd|dmg|iso"
+        #     + r"|epub|dll|cnf|tgz|sha1"
+        #     + r"|thmx|mso|arff|rtf|jar|csv"
+        #     + r"|rm|smil|wmv|swf|wma|zip|rar|gz)$", parsed.path.lower())
 
     except TypeError:
         print ("TypeError for ", parsed)
