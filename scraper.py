@@ -2,6 +2,7 @@ import re
 from urllib.parse import urlparse
 from bs4 import BeautifulSoup
 import lxml
+from urllib.request import urlopen
 
 
 def scraper(url, resp):
@@ -57,35 +58,34 @@ def is_valid(url):
         # parse the hostname to check if the domain is ics.uci.edu, cs.uci.edu, informatics.uci.edu, stat.uci.edu
         # consider splitting by . and checking the last 3 elems in the list to see if it is a valid domain
         # may consider parsing in a different way later
+        path = parsed.path # used for checking later
         hostname_parse = parsed.hostname.split('.')
         domain = hostname_parse[-3:]
         if domain != ['ics', 'uci', 'edu'] or domain != ['cs', 'uci', 'edu'] \
             or domain != ['informatics', 'uci', 'edu'] or domain != ['stat', 'uci', 'edu']:
             return False
         #check the robots.txt file (does the website permit the crawl)
-        parsed.replace(path='robots.txt')
+        replace = parsed.replace(path='robots.txt')
         # access the file
-        file = open(parsed, "r")
-        line = file.readline()
         check_for_disallow = False
-        while line:
-            if(check_for_disallow == False):
-                index = line.find("User-agent: ")
-                if index != -1:
+        with urlopen(replace) as response:
+            file = response.read()
+            lines = file.split('\n')
+            for line in lines:
+                if line.startswith("User-agent: "):
                     robot = line[len("User-agent: "):]
                     if robot == USERAGENT or '*': # dk if correct check later
                         #look at disallow statements
                         check_for_disallow = True
                         #maybe set a boolean to true so we know to check?
-            else:
-                index = line.find("Disallow: ")
-                if index != -1:
+                    else: check_for_disallow = False
+                if line.startswith("Disallow:") and check_for_disallow == True:
                     disallow = line[len("Disallow: "):]
+                    check = urlparse.urljoin(url, disallow)
                     if(disallow == ""): return True #it is allowed to all parts of the website
                     elif(disallow == "/"): return False #it is not allowed to any parts of the webiste
-                else:
-                    check_for_disallow = False
-            line = file.readline()
+                    elif(check == url): return False
+            # look at sitemaps
         
         # parse it by splitting? (find a different way later)
         # check user agent and disallow
