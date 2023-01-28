@@ -24,6 +24,9 @@ def extract_next_links(url, resp):
     #if it is permitted to crawl the url, parse resp.raw_response.content for links
     urls = list()
     if is_valid(resp.raw_response.url):
+        # check if there is actually data associated with the url (make sure it is not a dead url)
+        if len(resp.raw_response.content) == 0:
+            return list()
         # parse resp.raw_response.content look into BeautifulSoup, lxml
         # resp.raw_response.content should be html content
         # we want all the a tags that have href attributes
