@@ -25,9 +25,22 @@ def extract_next_links(url, resp):
     urls = list()
     if is_valid(resp.raw_response.url):
         # parse resp.raw_response.content look into BeautifulSoup, lxml
-        urls.append(...)
-    #the urls in the list have to be defragmented which can be done with urlparse.urldefrag
-    #make sure to change relative urls to absolute urls (look into urljoin)
+        # resp.raw_response.content should be html content
+        # we want all the a tags that have href attributes
+        soup = BeautifulSoup(resp.raw_response.content, lxml)
+        # we are using BeautifulSoup lxml to find all the a tags in the html file that also has a
+        # href attribute which is used to contain links that link to different pages or sites
+        # we then use get to get the link associated with the href attribute
+        links = [a.get('href') for a in soup.findall('a', href=True)]
+        for link in links:
+            #the urls in the list have to be defragmented which can be done with urlparse.urldefrag
+            #make sure to change relative urls to absolute urls (look into urljoin)
+            #these two steps need to be done before adding it to the url list
+            url = urlparse.urldefrag(link)[0] # defrag link
+            base = urlparse.urldefrag(resp.url)[0] # not sure if need to defrag base
+            url = urlparse.urljoin(base, url) # join the base to link that is found
+            # it essentially ensures that we will have the absolute url and not the relative url
+            urls.append(url)
     return urls
 
 def is_valid(url):
