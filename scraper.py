@@ -6,6 +6,7 @@ import urllib.robotparser
 
 
 def scraper(url, resp):
+    # maybe add a check for text content here and if there isnt much just dont call extract_next_link
     links = extract_next_links(url, resp)
     return [link for link in links if is_valid(link)]
 
@@ -44,7 +45,6 @@ def extract_next_links(url, resp):
             base = urldefrag(resp.url)[0] # not sure if need to defrag base
             url = urljoin(base, url) # join the base to link that is found/ check if this is working correctly if not add / to beginning of url
             # it essentially ensures that we will have the absolute url and not the relative url
-            if is_valid(url): urls.append(url)
     return urls
 
 def is_valid(url):
@@ -78,7 +78,7 @@ def is_valid(url):
         # access the file
         rp = urllib.robotparser.RobotFileParser()
         rp.set_url(robot)
-        if rp.can_fetch('*', url) or rp.can_fetch(USERAGENT, url): return True
+        if rp.can_fetch('*', url) or rp.can_fetch(self.config.useragent, url): return True
         else: return False
         # return not re.match(
         #     r".*\.(css|js|bmp|gif|jpe?g|ico"
