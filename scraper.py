@@ -44,7 +44,7 @@ def extract_next_links(url, resp):
             base = urldefrag(resp.url)[0] # not sure if need to defrag base
             url = urljoin(base, url) # join the base to link that is found/ check if this is working correctly if not add / to beginning of url
             # it essentially ensures that we will have the absolute url and not the relative url
-            urls.append(url)
+            if is_valid(url): urls.append(url)
     return urls
 
 def is_valid(url):
