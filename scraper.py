@@ -3,10 +3,12 @@ from urllib.parse import urlparse, urljoin, urldefrag
 from bs4 import BeautifulSoup
 import lxml
 import urllib.robotparser
+import nltk.tokenize
 
 
 def scraper(url, resp):
     # maybe add a check for text content here and if there isnt much just dont call extract_next_link
+    # use tokenizer here to look at content for report info?
     links = extract_next_links(url, resp)
     return [link for link in links if is_valid(link)]
 
