@@ -43,8 +43,11 @@ def extract_next_links(url, resp):
             #these two steps need to be done before adding it to the url list
             url = urldefrag(link)[0] # defrag link
             base = urldefrag(resp.url)[0] # not sure if need to defrag base
-            url = urljoin(base, url) # join the base to link that is found/ check if this is working correctly if not add / to beginning of url
+            parsed = urlparse(url)
+            if parsed.netloc == "":
+                url = urljoin(base, url) # join the base to link that is found/ check if this is working correctly if not add / to beginning of url
             # it essentially ensures that we will have the absolute url and not the relative url
+            urls.append(url)
     return urls
 
 def is_valid(url):
@@ -64,6 +67,16 @@ def is_valid(url):
             + r"|epub|dll|cnf|tgz|sha1"
             + r"|thmx|mso|arff|rtf|jar|csv"
             + r"|rm|smil|wmv|swf|wma|zip|rar|gz)$", parsed.path.lower()):
+            return False
+        if re.match(
+            r".*/(css|js|bmp|gif|jpe?g|ico"
+            + r"|png|tiff?|mid|mp2|mp3|mp4"
+            + r"|wav|avi|mov|mpeg|ram|m4v|mkv|ogg|ogv|pdf"
+            + r"|ps|eps|tex|ppt|pptx|doc|docx|xls|xlsx|names"
+            + r"|data|dat|exe|bz2|tar|msi|bin|7z|psd|dmg|iso"
+            + r"|epub|dll|cnf|tgz|sha1"
+            + r"|thmx|mso|arff|rtf|jar|csv"
+            + r"|rm|smil|wmv|swf|wma|zip|rar|gz)/?.*$", parsed.path.lower()):
             return False
         # parse the hostname to check if the domain is ics.uci.edu, cs.uci.edu, informatics.uci.edu, stat.uci.edu
         # consider splitting by . and checking the last 3 elems in the list to see if it is a valid domain
