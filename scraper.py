@@ -13,8 +13,18 @@ userAgent = config['IDENTIFICATION']['USERAGENT']
 defaulttime = float(config['CRAWLER']['POLITENESS'])
 
 def scraper(url, resp):
+    # maybe keep track of prev urls in a list/set not sure 
+    # this could be done in the for loop that loops over list returned by extract_next_links
     # maybe add a check for text content here and if there isnt much just dont call extract_next_link
     # use tokenizer here to look at content for report info?
+    words = nltk.tokenize.word_tokenize(resp.raw_response.content)
+    # sort by frequencies ? put in a dictionary ? not too sure
+    # keep track of longest page
+    parsed = urlparse(url)
+    # if domain is ics.uci.edu
+    # add the subdomain in a dictionary add to count
+    # key: subdomain value: unique pgs
+    # sort alphabetically
     links = extract_next_links(url, resp)
     return [link for link in links if is_valid(link)]
 
@@ -32,7 +42,7 @@ def extract_next_links(url, resp):
     # Return a list with the hyperlinks (as strings) scrapped from resp.raw_response.content
 
     #if it is permitted to crawl the url, parse resp.raw_response.content for links
-    is_valid(url)
+    #is_valid(url)
     urls = list()
         # check if there is actually data associated with the url (make sure it is not a dead url)
     if len(resp.raw_response.content) == 0:
@@ -95,6 +105,9 @@ def is_valid(url):
         if domain != ['ics', 'uci', 'edu'] or domain != ['cs', 'uci', 'edu'] \
             or domain != ['informatics', 'uci', 'edu'] or domain != ['stat', 'uci', 'edu']:
             return False
+
+        # have to check for traps look at teh paths? compare to previous urls? 
+
         #check the robots.txt file (does the website permit the crawl)
         robot = urljoin(url, '/robots.txt')
         # access the file
@@ -103,8 +116,8 @@ def is_valid(url):
         if (rp.crawl_delay(userAgent)):
             politeTime = rp.crawl_delay(userAgent)
         else:
-            politeTime = defaultTime;
-        rp.read();
+            politeTime = defaultTime
+        rp.read()
         if rp.can_fetch(userAgent, url): return True
         else: return False
         # return not re.match(
