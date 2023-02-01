@@ -4,7 +4,13 @@ from bs4 import BeautifulSoup
 import lxml
 import urllib.robotparser
 import nltk.tokenize
+import time
+import configparser
 
+config = configparser.ConfigParser()
+config.read("config.ini")
+userAgent = config['IDENTIFICATION']['USERAGENT']
+defaulttime = float(config['CRAWLER']['POLITENESS'])
 
 def scraper(url, resp):
     # maybe add a check for text content here and if there isnt much just dont call extract_next_link
@@ -26,34 +32,35 @@ def extract_next_links(url, resp):
     # Return a list with the hyperlinks (as strings) scrapped from resp.raw_response.content
 
     #if it is permitted to crawl the url, parse resp.raw_response.content for links
+    is_valid(url)
     urls = list()
-    if is_valid(resp.raw_response.url):
         # check if there is actually data associated with the url (make sure it is not a dead url)
-        if len(resp.raw_response.content) == 0:
-            return list()
+    if len(resp.raw_response.content) == 0:
+        return list()
         # parse resp.raw_response.content look into BeautifulSoup, lxml
         # resp.raw_response.content should be html content
         # we want all the a tags that have href attributes
-        soup = BeautifulSoup(resp.raw_response.content, lxml)
+    soup = BeautifulSoup(resp.raw_response.content, "lxml")
         # we are using BeautifulSoup lxml to find all the a tags in the html file that also has a
         # href attribute which is used to contain links that link to different pages or sites
         # we then use get to get the link associated with the href attribute
-        links = [a.get('href') for a in soup.findall('a', href=True)]
-        for link in links:
+    links = {a.get('href') for a in soup.find_all('a') if a.get('href')!="#"}
+    for link in links:
             #the urls in the list have to be defragmented which can be done with urlparse.urldefrag
             #make sure to change relative urls to absolute urls (look into urljoin)
             #these two steps need to be done before adding it to the url list
-            url = urldefrag(link)[0] # defrag link
-            base = urldefrag(resp.url)[0] # not sure if need to defrag base
-            parsed = urlparse(url)
-            if parsed.netloc == "":
-                url = urljoin(base, url) # join the base to link that is found/ check if this is working correctly if not add / to beginning of url
-            # it essentially ensures that we will have the absolute url and not the relative url
-            urls.append(url)
+        url = urldefrag(link)[0] # defrag link
+        base = urldefrag(resp.url)[0] # not sure if need to defrag base
+        parsed = urlparse(url)
+        if parsed.netloc == "":
+            url = urljoin(base, url) # join the base to link that is found/ check if this is working correctly if not add / to beginning of url
+            # it essentially ensures that we will have the absolute url and not the relative ur
+        urls.append(url)
+        time.sleep(defaulttime)
     return urls
 
 def is_valid(url):
-    # Decide whether to crawl this url or not. 
+    # Decide whether to crawl this url or not.
     # If you decide to crawl it, return True; otherwise return False.
     # There are already some conditions that return False.
     try:
@@ -93,7 +100,11 @@ def is_valid(url):
         # access the file
         rp = urllib.robotparser.RobotFileParser()
         rp.set_url(robot)
-        if rp.can_fetch('*', url) or rp.can_fetch(self.config.useragent, url): return True
+        if (rp.crawl_delay(userAgent)):
+            politeTime = rp.crawl_delay(userAgent)
+        else:
+            politeTime = defaultTime;
+        if rp.can_fetch(userAgent, url): return True
         else: return False
         # return not re.match(
         #     r".*\.(css|js|bmp|gif|jpe?g|ico"
@@ -104,7 +115,6 @@ def is_valid(url):
         #     + r"|epub|dll|cnf|tgz|sha1"
         #     + r"|thmx|mso|arff|rtf|jar|csv"
         #     + r"|rm|smil|wmv|swf|wma|zip|rar|gz)$", parsed.path.lower())
-
     except TypeError:
         print ("TypeError for ", parsed)
         raise
