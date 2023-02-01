@@ -104,6 +104,7 @@ def is_valid(url):
             politeTime = rp.crawl_delay(userAgent)
         else:
             politeTime = defaultTime;
+        rp.read();
         if rp.can_fetch(userAgent, url): return True
         else: return False
         # return not re.match(
