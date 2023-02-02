@@ -3,7 +3,7 @@ from urllib.parse import urlparse, urljoin, urldefrag
 from bs4 import BeautifulSoup
 import lxml
 import urllib.robotparser
-import nltk.tokenize
+import nltk
 import time
 import configparser
 
@@ -13,11 +13,12 @@ userAgent = config['IDENTIFICATION']['USERAGENT']
 defaulttime = float(config['CRAWLER']['POLITENESS'])
 
 def scraper(url, resp):
-    # maybe keep track of prev urls in a list/set not sure 
+    # maybe keep track of prev urls in a list/set not sure
     # this could be done in the for loop that loops over list returned by extract_next_links
     # maybe add a check for text content here and if there isnt much just dont call extract_next_link
     # use tokenizer here to look at content for report info?
-    words = nltk.tokenize.word_tokenize(resp.raw_response.content)
+    currSoup = BeautifulSoup(resp.raw_response.content, "lxml")
+    words = nltk.tokenize.word_tokenize(currSoup.get_text())
     # sort by frequencies ? put in a dictionary ? not too sure
     # keep track of longest page
     parsed = urlparse(url)
@@ -102,8 +103,7 @@ def is_valid(url):
         # may consider parsing in a different way later
         netloc_parse = parsed.netloc.split('.')
         domain = netloc_parse[-3:]
-        if domain != ['ics', 'uci', 'edu'] or domain != ['cs', 'uci', 'edu'] \
-            or domain != ['informatics', 'uci', 'edu'] or domain != ['stat', 'uci', 'edu']:
+        if (domain[-2:] != ['uci','edu'] or (domain[0] not in ['ics', 'cs', 'stat', 'informatics'])):
             return False
 
         # have to check for traps look at teh paths? compare to previous urls? 
@@ -113,11 +113,11 @@ def is_valid(url):
         # access the file
         rp = urllib.robotparser.RobotFileParser()
         rp.set_url(robot)
+        rp.read()
         if (rp.crawl_delay(userAgent)):
             politeTime = rp.crawl_delay(userAgent)
         else:
-            politeTime = defaultTime
-        rp.read()
+            politeTime = defaulttime
         if rp.can_fetch(userAgent, url): return True
         else: return False
         # return not re.match(
