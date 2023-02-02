@@ -10,7 +10,7 @@ import configparser
 config = configparser.ConfigParser()
 config.read("config.ini")
 userAgent = config['IDENTIFICATION']['USERAGENT']
-defaulttime = float(config['CRAWLER']['POLITENESS'])
+# defaulttime = float(config['CRAWLER']['POLITENESS'])
 
 def scraper(url, resp):
     # maybe keep track of prev urls in a list/set not sure
@@ -67,7 +67,7 @@ def extract_next_links(url, resp):
             url = urljoin(base, url) # join the base to link that is found/ check if this is working correctly if not add / to beginning of url
             # it essentially ensures that we will have the absolute url and not the relative ur
         urls.append(url)
-        time.sleep(defaulttime)
+        # time.sleep(defaulttime)
     return urls
 
 def is_valid(url):
@@ -114,10 +114,10 @@ def is_valid(url):
         rp = urllib.robotparser.RobotFileParser()
         rp.set_url(robot)
         rp.read()
-        if (rp.crawl_delay(userAgent)):
-            politeTime = rp.crawl_delay(userAgent)
-        else:
-            politeTime = defaulttime
+        # if (rp.crawl_delay(userAgent)):
+        #     politeTime = rp.crawl_delay(userAgent)
+        # else:
+        #     politeTime = defaulttime
         if rp.can_fetch(userAgent, url): return True
         else: return False
         # return not re.match(
