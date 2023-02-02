@@ -7,6 +7,7 @@ import nltk
 import time
 import configparser
 from collections import defaultdict
+import simhash
 
 config = configparser.ConfigParser()
 config.read("config.ini")
@@ -145,3 +146,11 @@ def is_valid(url):
     except TypeError:
         print ("TypeError for ", parsed)
         raise
+
+def near_duplicate(pg1, pg2, threshold):
+    # we imported the simhash lib to determine whether two pages are near duplicates or not
+    # if the distance between the two pages are less than the threshold the two pages are 
+    # considered near duplicates
+    s1 = simhash.Simhash(pg1)
+    s2 = simhash.Simhash(pg2)
+    return s1.distance(s2) < threshold
