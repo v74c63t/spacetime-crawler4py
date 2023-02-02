@@ -32,7 +32,7 @@ def scraper(url, resp):
     # keep track of longest page
     parsed = urlparse(resp.url)
     # if domain is ics.uci.edu
-    if(parsed.netloc[-12:] == '.ics.uci.edu'):
+    if parsed.netloc[-12:] == '.ics.uci.edu' and parsed.netloc != 'www.ics.uci.edu':
         #check if this is correct
         parsed =  parsed._replace(fragment="", params="", query="",path="")
         sub_domain = urlunparse(parsed)
