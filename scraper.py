@@ -1,28 +1,41 @@
 import re
-from urllib.parse import urlparse, urljoin, urldefrag
+from urllib.parse import urlparse, urljoin, urldefrag, urlunparse
 from bs4 import BeautifulSoup
 import lxml
 import urllib.robotparser
 import nltk
 import time
 import configparser
+from collections import defaultdict
 
 config = configparser.ConfigParser()
 config.read("config.ini")
 userAgent = config['IDENTIFICATION']['USERAGENT']
 # defaulttime = float(config['CRAWLER']['POLITENESS'])
+sub_domains = defaultdict(int) # might have to move this to a diff file
+largest_pg = 0 # might have to move this to a diff file
+unique_links = {} # might have to move this to a diff file
+prev_urls = []
 
 def scraper(url, resp):
     # maybe keep track of prev urls in a list/set not sure
+    # maybe keep a check to see if we've been to the url before?
+    # if we have just return an empty list
     # this could be done in the for loop that loops over list returned by extract_next_links
     # maybe add a check for text content here and if there isnt much just dont call extract_next_link
     # use tokenizer here to look at content for report info?
     currSoup = BeautifulSoup(resp.raw_response.content, "lxml")
     words = nltk.tokenize.word_tokenize(currSoup.get_text())
+    if len(words) > largest_pg: largest_pg = len(words)
     # sort by frequencies ? put in a dictionary ? not too sure
     # keep track of longest page
-    parsed = urlparse(url)
+    parsed = urlparse(resp.url)
     # if domain is ics.uci.edu
+    if(parsed.netloc[-12:] == '.ics.uci.edu'):
+        #check if this is correct
+        parsed =  parsed._replace(fragment="", params="", query="",path="")
+        sub_domain = urlunparse(parsed)
+        sub_domains[sub_domain] += 1
     # add the subdomain in a dictionary add to count
     # key: subdomain value: unique pgs
     # sort alphabetically
