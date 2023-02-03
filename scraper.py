@@ -13,7 +13,7 @@ import tokenizer
 config = configparser.ConfigParser()
 config.read("config.ini")
 userAgent = config['IDENTIFICATION']['USERAGENT']
-# defaulttime = float(config['CRAWLER']['POLITENESS'])
+defaulttime = float(config['CRAWLER']['POLITENESS'])
 sub_domains = defaultdict(int) 
 largest_pg = ('',0) #(resp, word count) 
 unique_links = set() 
@@ -206,10 +206,6 @@ def is_valid(url):
         rp = urllib.robotparser.RobotFileParser()
         rp.set_url(robot)
         rp.read()
-        # if (rp.crawl_delay(userAgent)):
-        #     politeTime = rp.crawl_delay(userAgent)
-        # else:
-        #     politeTime = defaulttime
         if rp.can_fetch(userAgent, url): return True
         else: return False
         # return not re.match(
@@ -233,3 +229,13 @@ def near_duplicate(pg1, pg2, threshold):
     s1 = simhash.Simhash(pg1)
     s2 = simhash.Simhash(pg2)
     return s1.distance(s2) < threshold
+
+def politenessCheck(url):
+    robot = urljoin(url, '/robots.txt')
+    rp = urllib.robotparser.RobotFileParser()
+    rp.set_url(robot)
+    rp.read()
+    if (rp.crawl_delay(userAgent)):
+         return rp.crawl_delay(userAgent)
+     else:
+         return defaulttime
