@@ -66,6 +66,7 @@ def extract_next_links(url, resp):
     # resp.error: when status is not 200, you can check the error here, if needed.
     if resp.status != 200:
         print(resp.error)
+        return urls
     # resp.raw_response: this is where the page actually is. More specifically, the raw_response has two parts:
     #         resp.raw_response.url: the url, again
     #         resp.raw_response.content: the content of the page!
@@ -127,9 +128,13 @@ def extract_next_links(url, resp):
             # it essentially ensures that we will have the absolute url and not the relative url
         urls.append(defrag)
         # time.sleep(defaulttime)
+    global prev_resps
     prev_resps.append(resp) # not sure if its actually global var have ot check
+    global prev_urls
     prev_urls.append(resp.url)
+    global unique_links
     unique_links.add(base)
+    return urls
     return urls
 
 def is_valid(url):
