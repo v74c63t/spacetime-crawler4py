@@ -16,14 +16,15 @@ def tokenizeCount(resp, freq):
     # given that it is not a stop word
     # word_freq: defaultdict(int)
     # we are assuming that wDict is a defaultdictionary of integers
-    soup = BeautifulSoup(resp.raw_response.content, "lxml")
-    words = word_tokenize(soup.get_text())
-    for word in words:
-        if word not in stop_words and word.isalnum():
-            # if the word is not a stop word and it is alphanumeric
-            # we will turn the word into lower case and add 1 to the count 
-            # in the defaultdictionary for said word
-            freq[word.lower] += 1
+    if resp.raw_response != None:
+        soup = BeautifulSoup(resp.raw_response.content, "lxml")
+        words = word_tokenize(soup.get_text())
+        for word in words:
+            if word not in stop_words and word.isalnum():
+                # if the word is not a stop word and it is alphanumeric
+                # we will turn the word into lower case and add 1 to the count 
+                # in the defaultdictionary for said word
+                freq[word.lower] += 1
     return freq
     # sorting dictionaries dont rly work/do anything
     # wDict is a defaultdict so this might cause problems so ill just return the updated dict

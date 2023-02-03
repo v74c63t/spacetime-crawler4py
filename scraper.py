@@ -27,10 +27,11 @@ def report_info(resp):
     word_freq = tokenizer.tokenizeCount(resp, word_freq)
     global most_common_words
     most_common_words = sorted(word_freq.items(), key=lambda x: x[1], reverse=True)[0:50]
-    soup = BeautifulSoup(resp.raw_response.content, "lxml")
-    words = nltk.tokenize.word_tokenize(soup.get_text())
-    global largest_pg # check if correct
-    if len(words) > largest_pg[1]: largest_pg = (resp, len(words))
+    if resp.raw_response != None:
+        soup = BeautifulSoup(resp.raw_response.content, "lxml")
+        words = nltk.tokenize.word_tokenize(soup.get_text())
+        global largest_pg # check if correct
+        if len(words) > largest_pg[1]: largest_pg = (resp, len(words))
     # keep track of longest page
     global sub_domains
     parsed = urlparse(resp.url)
@@ -74,7 +75,7 @@ def extract_next_links(url, resp):
     #is_valid(url)
     urls = list()
         # check if there is actually data associated with the url (make sure it is not a dead url)
-    if len(resp.raw_response.content) == 0:
+    if resp.raw_response != None and len(resp.raw_response.content) == 0:
         return list()
         
 
