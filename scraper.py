@@ -135,7 +135,6 @@ def extract_next_links(url, resp):
     global unique_links
     unique_links.add(base)
     return urls
-    return urls
 
 def is_valid(url):
     # Decide whether to crawl this url or not.
@@ -205,6 +204,9 @@ def is_valid(url):
 
         # have to check for traps look at teh paths? compare to previous urls? 
         if 'calendar' in url: return False # calendar is a trap
+        if re.match(
+            r".*/[0-9][0-9][0-9][0-9]\-[0-1][0-9]\-[0-3][0-9]/?.*$", parsed.path.lower()):
+            return False # deal with calendar trap
  
         #check the robots.txt file (does the website permit the crawl)
         robot = urljoin(url, '/robots.txt')
