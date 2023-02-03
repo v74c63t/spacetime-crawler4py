@@ -53,7 +53,7 @@ def scraper(url, resp):
     # if we have just return an empty list
     # this could be done in the for loop that loops over list returned by extract_next_links
     # maybe add a check for text content here and if there isnt much just dont call extract_next_link
-    report_info(resp)
+    report_info(resp) # figure out how to get this info to a file or something
     links = extract_next_links(url, resp)
     return [link for link in links if is_valid(link)]
 
@@ -76,24 +76,36 @@ def extract_next_links(url, resp):
         # check if there is actually data associated with the url (make sure it is not a dead url)
     if len(resp.raw_response.content) == 0:
         return list()
-        # parse resp.raw_response.content look into BeautifulSoup, lxml
-        # resp.raw_response.content should be html content
-        # we want all the a tags that have href attributes
-    soup = BeautifulSoup(resp.raw_response.content, "lxml")
+        
 
     # check if we visited the url before
     for prev_url in prev_urls:
         if resp.url == prev_url:return urls
 
+    soup = BeautifulSoup(resp.raw_response.content, "lxml")
+    resp_text = soup.get_text()
+
+    # CHECK TEXT CONTENT
+    # we can either check for very large files by seeing if it exceeds a certain word count we just reject it
+    # if len(resp_text) > 50000: return urls
+    # or
+    # we can strip all the stop words from the page and see if the remaining word count is lower than a threshold which 
+    # would make it so it has 'low' textual information 
+    # if len(resp_text) after stripping stop words < 100: return urls
+    # or we can do both
+    
     # check for near duplicate pages
     for prev_resp in prev_resps: 
         prev_text = BeautifulSoup(prev_resp.raw_response.content, "lxml").get_text()
-        resp_text = soup.get_text()
         if near_duplicate(prev_text, resp_text, 10): # might change threshold
             return urls
         # we are using BeautifulSoup lxml to find all the a tags in the html file that also has a
         # href attribute which is used to contain links that link to different pages or sites
         # we then use get to get the link associated with the href attribute
+
+    # parse resp.raw_response.content look into BeautifulSoup, lxml
+    # resp.raw_response.content should be html content
+    # we want all the a tags that have href attributes
     base = urldefrag(resp.url)[0] # not sure if need to defrag base
     links = {a.get('href') for a in soup.find_all('a') if a.get('href')!="#"}
     for link in links:
@@ -104,7 +116,7 @@ def extract_next_links(url, resp):
         parsed = urlparse(defrag)
         if parsed.netloc == "":
             defrag = urljoin(base, defrag) # join the base to link that is found/ check if this is working correctly if not add / to beginning of url
-            # it essentially ensures that we will have the absolute url and not the relative ur
+            # it essentially ensures that we will have the absolute url and not the relative url
         urls.append(defrag)
         # time.sleep(defaulttime)
     prev_resps.append(resp) # not sure if its actually global var have ot check
