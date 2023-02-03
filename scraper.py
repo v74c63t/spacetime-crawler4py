@@ -179,6 +179,7 @@ def is_valid(url):
         raise
 
 def near_duplicate(pg1, pg2, threshold):
+    # simhash code obtained from here: https://github.com/1e0ng/simhash
     # we imported the simhash lib to determine whether two pages are near duplicates or not
     # if the distance between the two pages are less than the threshold the two pages are 
     # considered near duplicates
