@@ -18,6 +18,7 @@ sub_domains = defaultdict(int)
 largest_pg = 0 
 unique_links = set() 
 prev_urls = set()
+prev_resps = set()
 word_freq = defaultdict(int)
 most_common_words = []
 
@@ -80,6 +81,12 @@ def extract_next_links(url, resp):
         # resp.raw_response.content should be html content
         # we want all the a tags that have href attributes
     soup = BeautifulSoup(resp.raw_response.content, "lxml")
+    # check for near duplicate pages
+    for prev_resp in prev_resps: 
+        prev_text = BeautifulSoup(prev_resp.raw_response.content, "lxml").get_text()
+        resp_text = soup.get_text()
+        if near_duplicate(prev_text, resp_text, 10): # might change threshold
+            return urls
         # we are using BeautifulSoup lxml to find all the a tags in the html file that also has a
         # href attribute which is used to contain links that link to different pages or sites
         # we then use get to get the link associated with the href attribute
@@ -88,14 +95,16 @@ def extract_next_links(url, resp):
             #the urls in the list have to be defragmented which can be done with urlparse.urldefrag
             #make sure to change relative urls to absolute urls (look into urljoin)
             #these two steps need to be done before adding it to the url list
-        url = urldefrag(link)[0] # defrag link
+        defrag = urldefrag(link)[0] # defrag link
         base = urldefrag(resp.url)[0] # not sure if need to defrag base
-        parsed = urlparse(url)
+        parsed = urlparse(defrag)
         if parsed.netloc == "":
-            url = urljoin(base, url) # join the base to link that is found/ check if this is working correctly if not add / to beginning of url
+            defrag = urljoin(base, defrag) # join the base to link that is found/ check if this is working correctly if not add / to beginning of url
             # it essentially ensures that we will have the absolute url and not the relative ur
-        urls.append(url)
+        urls.append(defrag)
         # time.sleep(defaulttime)
+    prev_resps.add(resp) # not sure if its actually global var have ot check
+    prev_urls.add(url)
     return urls
 
 def is_valid(url):
