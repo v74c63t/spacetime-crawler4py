@@ -4,7 +4,7 @@ from bs4 import BeautifulSoup
 import lxml
 import urllib.robotparser
 import nltk
-import time
+# import time
 import configparser
 from collections import defaultdict
 import simhash
@@ -93,6 +93,13 @@ def extract_next_links(url, resp):
     # would make it so it has 'low' textual information 
     # if len(resp_text) after stripping stop words < 100: return urls
     # or we can do both
+
+    if len(resp_text) > 2000: # considered large file
+        if len(resp_text) > 50000: # very unlikely to not be low info
+            return urls
+        if len(tokenizer.remove_stop_words(resp_text)) < 100: # considered low info
+            return urls
+
     
     # check for near duplicate pages
     for prev_resp in prev_resps: 
@@ -192,7 +199,7 @@ def is_valid(url):
 
         # have to check for traps look at teh paths? compare to previous urls? 
         if 'calendar' in url: return False # calendar is a trap
-
+ 
         #check the robots.txt file (does the website permit the crawl)
         robot = urljoin(url, '/robots.txt')
         # access the file

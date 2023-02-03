@@ -28,3 +28,11 @@ def tokenizeCount(resp, freq):
     # sorting dictionaries dont rly work/do anything
     # wDict is a defaultdict so this might cause problems so ill just return the updated dict
     # return dict(sorted(wDict.items(), key = lambda x:(x[1] * -1, x[0])))
+
+def remove_stop_words(resp_text):
+    words = word_tokenize(resp_text)
+    filter = []
+    for word in words:
+        if word not in stop_words and word.isalnum():
+            filter.append(word)
+    return filter
