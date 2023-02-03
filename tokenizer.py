@@ -31,3 +31,11 @@ def filterTokens(unfiltered, wDict)
         else:
             wDict[i] += 1
     return dict(sorted(wDict.items(), key = lambda x:(x[1] * -1, x[0])))
+
+    # i was thinking maybe we could sort the dictionary at the end?
+    # or maybe we could have another variable that has a list of the
+    # 50 most common words at that time not too sure
+    # sort = sorted(wDict.items(), key=lambda x: x[1], reverse=True)
+    # return wDict
+    # return dict(sorted(wDict.items(), key = lambda x:(x[1] * -1, x[0])))
+

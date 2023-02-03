@@ -58,7 +58,6 @@ def report_info(url, resp):
     # sort alphabetically
     
 
-
 def scraper(url, resp):
     # maybe keep track of prev urls in a list/set not sure
     # maybe keep a check to see if we've been to the url before?
@@ -106,16 +105,12 @@ def extract_next_links(url, resp):
             #the urls in the list have to be defragmented which can be done with urlparse.urldefrag
             #make sure to change relative urls to absolute urls (look into urljoin)
             #these two steps need to be done before adding it to the url list
-        url = urldefrag(link)[0] # defrag link
         defrag = urldefrag(link)[0] # defrag link
         base = urldefrag(resp.url)[0] # not sure if need to defrag base
-        parsed = urlparse(url)
         parsed = urlparse(defrag)
         if parsed.netloc == "":
-            url = urljoin(base, url) # join the base to link that is found/ check if this is working correctly if not add / to beginning of url
             defrag = urljoin(base, defrag) # join the base to link that is found/ check if this is working correctly if not add / to beginning of url
             # it essentially ensures that we will have the absolute url and not the relative ur
-        urls.append(url)
         urls.append(defrag)
         # time.sleep(defaulttime)
     prev_resps.add(resp) # not sure if its actually global var have ot check
@@ -188,8 +183,11 @@ def is_valid(url):
         domain = netloc_parse[-3:]
         if (domain[-2:] != ['uci','edu'] or (domain[0] not in ['ics', 'cs', 'stat', 'informatics'])):
             return False
+
+
         # have to check for traps look at teh paths? compare to previous urls? 
         if 'calendar' in url: return False # calendar is a trap
+
         #check the robots.txt file (does the website permit the crawl)
         robot = urljoin(url, '/robots.txt')
         # access the file
@@ -214,6 +212,7 @@ def is_valid(url):
     except TypeError:
         print ("TypeError for ", parsed)
         raise
+
 def near_duplicate(pg1, pg2, threshold):
     # simhash code obtained from here: https://github.com/1e0ng/simhash
     # we imported the simhash lib to determine whether two pages are near duplicates or not
