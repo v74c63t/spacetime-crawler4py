@@ -237,5 +237,5 @@ def politenessCheck(url):
     rp.read()
     if (rp.crawl_delay(userAgent)):
          return rp.crawl_delay(userAgent)
-     else:
+    else:
          return defaulttime
