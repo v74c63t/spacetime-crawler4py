@@ -8,15 +8,44 @@ import time
 import configparser
 from collections import defaultdict
 import simhash
+import tokenizer
 
 config = configparser.ConfigParser()
 config.read("config.ini")
 userAgent = config['IDENTIFICATION']['USERAGENT']
 # defaulttime = float(config['CRAWLER']['POLITENESS'])
-sub_domains = defaultdict(int) # might have to move this to a diff file
-largest_pg = 0 # might have to move this to a diff file
-unique_links = {} # might have to move this to a diff file
-prev_urls = []
+sub_domains = defaultdict(int) 
+largest_pg = 0 
+unique_links = set() 
+prev_urls = set()
+word_freq = defaultdict(int)
+most_common_words = []
+
+def report_info(url, resp):
+    global word_freq
+    word_freq = tokenizer.tokenizeCount(resp, word_freq)
+    global most_common_words
+    most_common_words = sorted(word_freq.items(), key=lambda x: x[1], reverse=True)[0:50]
+    # use tokenizer here to look at content for report info?
+    soup = BeautifulSoup(resp.raw_response.content, "lxml")
+    words = nltk.tokenize.word_tokenize(soup.get_text())
+    global largest_pg # check if correct
+    if len(words) > largest_pg: largest_pg = len(words)
+    # sort by frequencies ? put in a dictionary ? not too sure
+    # keep track of longest page
+    global sub_domains
+    parsed = urlparse(resp.url)
+    # if domain is ics.uci.edu
+    if parsed.netloc[-12:] == '.ics.uci.edu' and parsed.netloc != 'www.ics.uci.edu':
+        #check if this is correct
+        parsed =  parsed._replace(fragment="", params="", query="",path="")
+        # assuming the url has not been crawled before
+        if resp.url not in prev_urls:
+            sub_domain = urlunparse(parsed)
+            sub_domains[sub_domain] += 1
+    # add the subdomain in a dictionary add to count
+    # key: subdomain value: unique pgs
+    # sort alphabetically
 
 def scraper(url, resp):
     # maybe keep track of prev urls in a list/set not sure
@@ -24,22 +53,7 @@ def scraper(url, resp):
     # if we have just return an empty list
     # this could be done in the for loop that loops over list returned by extract_next_links
     # maybe add a check for text content here and if there isnt much just dont call extract_next_link
-    # use tokenizer here to look at content for report info?
-    currSoup = BeautifulSoup(resp.raw_response.content, "lxml")
-    words = nltk.tokenize.word_tokenize(currSoup.get_text())
-    if len(words) > largest_pg: largest_pg = len(words)
-    # sort by frequencies ? put in a dictionary ? not too sure
-    # keep track of longest page
-    parsed = urlparse(resp.url)
-    # if domain is ics.uci.edu
-    if parsed.netloc[-12:] == '.ics.uci.edu' and parsed.netloc != 'www.ics.uci.edu':
-        #check if this is correct
-        parsed =  parsed._replace(fragment="", params="", query="",path="")
-        sub_domain = urlunparse(parsed)
-        sub_domains[sub_domain] += 1
-    # add the subdomain in a dictionary add to count
-    # key: subdomain value: unique pgs
-    # sort alphabetically
+    report_info(url,resp)
     links = extract_next_links(url, resp)
     return [link for link in links if is_valid(link)]
 
