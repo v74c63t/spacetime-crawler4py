@@ -15,33 +15,32 @@ config.read("config.ini")
 userAgent = config['IDENTIFICATION']['USERAGENT']
 # defaulttime = float(config['CRAWLER']['POLITENESS'])
 sub_domains = defaultdict(int) 
-largest_pg = 0 
+largest_pg = ('',0) #(resp, word count) 
 unique_links = set() 
-prev_urls = set()
-prev_resps = set()
+prev_urls = []
+prev_resps = []
 word_freq = defaultdict(int)
 most_common_words = []
 
-def report_info(url, resp):
+def report_info(resp):
     global word_freq
     word_freq = tokenizer.tokenizeCount(resp, word_freq)
     global most_common_words
     most_common_words = sorted(word_freq.items(), key=lambda x: x[1], reverse=True)[0:50]
-    # use tokenizer here to look at content for report info?
     soup = BeautifulSoup(resp.raw_response.content, "lxml")
     words = nltk.tokenize.word_tokenize(soup.get_text())
     global largest_pg # check if correct
-    if len(words) > largest_pg: largest_pg = len(words)
-    # sort by frequencies ? put in a dictionary ? not too sure
+    if len(words) > largest_pg[1]: largest_pg = (resp, len(words))
     # keep track of longest page
     global sub_domains
     parsed = urlparse(resp.url)
     # if domain is ics.uci.edu
     if parsed.netloc[-12:] == '.ics.uci.edu' and parsed.netloc != 'www.ics.uci.edu':
         #check if this is correct
+        url = resp.url.urldefrag()[0]
         parsed =  parsed._replace(fragment="", params="", query="",path="")
         # assuming the url has not been crawled before
-        if resp.url not in prev_urls:
+        if url not in unique_links:
             sub_domain = urlunparse(parsed)
             sub_domains[sub_domain] += 1
     # add the subdomain in a dictionary add to count
@@ -54,7 +53,7 @@ def scraper(url, resp):
     # if we have just return an empty list
     # this could be done in the for loop that loops over list returned by extract_next_links
     # maybe add a check for text content here and if there isnt much just dont call extract_next_link
-    report_info(url,resp)
+    report_info(resp)
     links = extract_next_links(url, resp)
     return [link for link in links if is_valid(link)]
 
@@ -81,6 +80,11 @@ def extract_next_links(url, resp):
         # resp.raw_response.content should be html content
         # we want all the a tags that have href attributes
     soup = BeautifulSoup(resp.raw_response.content, "lxml")
+
+    # check if we visited the url before
+    for prev_url in prev_urls:
+        if resp.url == prev_url:return urls
+
     # check for near duplicate pages
     for prev_resp in prev_resps: 
         prev_text = BeautifulSoup(prev_resp.raw_response.content, "lxml").get_text()
@@ -90,21 +94,22 @@ def extract_next_links(url, resp):
         # we are using BeautifulSoup lxml to find all the a tags in the html file that also has a
         # href attribute which is used to contain links that link to different pages or sites
         # we then use get to get the link associated with the href attribute
+    base = urldefrag(resp.url)[0] # not sure if need to defrag base
     links = {a.get('href') for a in soup.find_all('a') if a.get('href')!="#"}
     for link in links:
             #the urls in the list have to be defragmented which can be done with urlparse.urldefrag
             #make sure to change relative urls to absolute urls (look into urljoin)
             #these two steps need to be done before adding it to the url list
-        defrag = urldefrag(link)[0] # defrag link
-        base = urldefrag(resp.url)[0] # not sure if need to defrag base
+        defrag = urldefrag(link)[0] # defrag link     
         parsed = urlparse(defrag)
         if parsed.netloc == "":
             defrag = urljoin(base, defrag) # join the base to link that is found/ check if this is working correctly if not add / to beginning of url
             # it essentially ensures that we will have the absolute url and not the relative ur
         urls.append(defrag)
         # time.sleep(defaulttime)
-    prev_resps.add(resp) # not sure if its actually global var have ot check
-    prev_urls.add(url)
+    prev_resps.append(resp) # not sure if its actually global var have ot check
+    prev_urls.append(resp.url)
+    unique_links.add(base)
     return urls
 
 def is_valid(url):
