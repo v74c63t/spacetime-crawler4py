@@ -96,6 +96,7 @@ def extract_next_links(url, resp):
 
     soup = BeautifulSoup(resp.raw_response.content, "lxml")
     resp_text = soup.get_text()
+    resp_text.encode('utf-8', errors='ignore')
 
     # CHECK TEXT CONTENT
     # we can either check for very large files by seeing if it exceeds a certain word count we just reject it
@@ -117,6 +118,7 @@ def extract_next_links(url, resp):
     global prev_resps
     for prev_resp in prev_resps: 
         prev_text = BeautifulSoup(prev_resp.raw_response.content, "lxml").get_text()
+        prev_text.encode('utf-8', errors='ignore')
         if near_duplicate(prev_text, resp_text, 10): # might change threshold
             return urls
         # we are using BeautifulSoup lxml to find all the a tags in the html file that also has a

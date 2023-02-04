@@ -18,7 +18,8 @@ def tokenizeCount(resp, freq):
     # we are assuming that wDict is a defaultdictionary of integers
     if resp.raw_response != None:
         soup = BeautifulSoup(resp.raw_response.content, "lxml")
-        words = word_tokenize(soup.get_text())
+        text = soup.get_text()
+        words = word_tokenize(text.encode('utf-8', errors='ignore'))
         for word in words:
             if word not in stop_words and word.isalnum():
                 # if the word is not a stop word and it is alphanumeric
