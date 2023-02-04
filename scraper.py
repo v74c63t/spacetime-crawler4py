@@ -237,6 +237,8 @@ def is_valid(url):
     except TypeError:
         print ("TypeError for ", parsed)
         raise
+    except urllib.error.URLError:
+        return False
 
 def near_duplicate(pg1, pg2, threshold):
     # simhash code obtained from here: https://github.com/1e0ng/simhash
