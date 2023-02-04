@@ -9,6 +9,7 @@ import configparser
 from collections import defaultdict
 import simhash
 import tokenizer
+from difflib import SequenceMatcher
 
 config = configparser.ConfigParser()
 config.read("config.ini")
@@ -64,6 +65,7 @@ def extract_next_links(url, resp):
     # resp.url: the actual url of the page
     # resp.status: the status code returned by the server. 200 is OK, you got the page. Other numbers mean that there was some kind of problem.
     # resp.error: when status is not 200, you can check the error here, if needed.
+    urls = list()
     if resp.status != 200:
         print(resp.error)
         return urls
@@ -74,16 +76,23 @@ def extract_next_links(url, resp):
 
     #if it is permitted to crawl the url, parse resp.raw_response.content for links
     #is_valid(url)
-    urls = list()
+    
         # check if there is actually data associated with the url (make sure it is not a dead url)
     if resp.raw_response == None or len(resp.raw_response.content) == 0:
         return list()
         
 
-    # check if we visited the url before
+    # check if we visited the url before or if they are similar to previous urls
+    parsed = urlparse(url)
     global prev_urls
     for prev_url in prev_urls:
         if resp.url == prev_url:return urls
+        prev_parsed = urlparse(prev_url)
+        if parsed.netloc == prev_parsed.netloc:
+            if SequenceMatcher(None, parsed.path, prev_parsed.path).ratio() >= .90:  # might change threshold later
+                # check query too?
+                return urls
+
 
     soup = BeautifulSoup(resp.raw_response.content, "lxml")
     resp_text = soup.get_text()
