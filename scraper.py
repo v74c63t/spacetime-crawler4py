@@ -89,7 +89,7 @@ def extract_next_links(url, resp):
 
     # CHECK TEXT CONTENT
     # we can either check for very large files by seeing if it exceeds a certain word count we just reject it
-    # if len(resp_text) > 50000: return urls
+    # if len(resp_text) > 20000: return urls
     # or
     # we can strip all the stop words from the page and see if the remaining word count is lower than a threshold which 
     # would make it so it has 'low' textual information 
@@ -97,7 +97,7 @@ def extract_next_links(url, resp):
     # or we can do both
 
     if len(resp_text) > 2000: # considered large file
-        if len(resp_text) > 50000: # very unlikely to not be low info
+        if len(resp_text) > 20000: # very unlikely to not be low info
             return urls
         if len(tokenizer.remove_stop_words(resp_text)) < 100: # considered low info
             return urls
@@ -151,8 +151,8 @@ def is_valid(url):
             + r"|ps|eps|tex|ppt|pptx|doc|docx|xls|xlsx|names"
             + r"|data|dat|exe|bz2|tar|msi|bin|7z|psd|dmg|iso"
             + r"|epub|dll|cnf|tgz|sha1"
-            + r"|thmx|mso|arff|rtf|jar|csv"
-            + r"|rm|smil|wmv|swf|wma|zip|rar|gz)$", parsed.path.lower()):
+            + r"|thmx|mso|arff|rtf|jar|csv|img|jpeg|jpg|png"
+            + r"|rm|smil|wmv|swf|wma|zip|rar|gz|ppsx|pps|ova)$", parsed.path.lower()):
             return False
         if re.match(
             r".*\.(css|js|bmp|gif|jpe?g|ico"
@@ -161,8 +161,8 @@ def is_valid(url):
             + r"|ps|eps|tex|ppt|pptx|doc|docx|xls|xlsx|names"
             + r"|data|dat|exe|bz2|tar|msi|bin|7z|psd|dmg|iso"
             + r"|epub|dll|cnf|tgz|sha1"
-            + r"|thmx|mso|arff|rtf|jar|csv"
-            + r"|rm|smil|wmv|swf|wma|zip|rar|gz)$", parsed.query.lower()):
+            + r"|thmx|mso|arff|rtf|jar|csv|img|jpeg|jpg|png"
+            + r"|rm|smil|wmv|swf|wma|zip|rar|gz|ppsx|pps|ova)$", parsed.query.lower()):
             return False
         if re.match(
             r".*\.(css|js|bmp|gif|jpe?g|ico"
@@ -171,8 +171,8 @@ def is_valid(url):
             + r"|ps|eps|tex|ppt|pptx|doc|docx|xls|xlsx|names"
             + r"|data|dat|exe|bz2|tar|msi|bin|7z|psd|dmg|iso"
             + r"|epub|dll|cnf|tgz|sha1"
-            + r"|thmx|mso|arff|rtf|jar|csv"
-            + r"|rm|smil|wmv|swf|wma|zip|rar|gz).*$", parsed.query.lower()):
+            + r"|thmx|mso|arff|rtf|jar|csv|img|jpeg|jpg|png"
+            + r"|rm|smil|wmv|swf|wma|zip|rar|gz|ppsx|pps|ova).*$", parsed.query.lower()):
             return False
         if re.match(
             r".*/(css|js|bmp|gif|jpe?g|ico"
@@ -181,8 +181,8 @@ def is_valid(url):
             + r"|ps|eps|tex|ppt|pptx|doc|docx|xls|xlsx|names"
             + r"|data|dat|exe|bz2|tar|msi|bin|7z|psd|dmg|iso"
             + r"|epub|dll|cnf|tgz|sha1"
-            + r"|thmx|mso|arff|rtf|jar|csv"
-            + r"|rm|smil|wmv|swf|wma|zip|rar|gz)/?.*$", parsed.path.lower()):
+            + r"|thmx|mso|arff|rtf|jar|csv|img|jpeg|jpg|png"
+            + r"|rm|smil|wmv|swf|wma|zip|rar|gz|ppsx|pps|ova)/?.*$", parsed.path.lower()):
             return False
         if re.match(
             r".*/(css|js|bmp|gif|jpe?g|ico"
@@ -191,8 +191,8 @@ def is_valid(url):
             + r"|ps|eps|tex|ppt|pptx|doc|docx|xls|xlsx|names"
             + r"|data|dat|exe|bz2|tar|msi|bin|7z|psd|dmg|iso"
             + r"|epub|dll|cnf|tgz|sha1"
-            + r"|thmx|mso|arff|rtf|jar|csv"
-            + r"|rm|smil|wmv|swf|wma|zip|rar|gz)/?.*$", parsed.query.lower()):
+            + r"|thmx|mso|arff|rtf|jar|csv|img|jpeg|jpg|png"
+            + r"|rm|smil|wmv|swf|wma|zip|rar|gz|ppsx|pps|ova)/?.*$", parsed.query.lower()):
             return False
         # parse the hostname to check if the domain is ics.uci.edu, cs.uci.edu, informatics.uci.edu, stat.uci.edu
         # consider splitting by . and checking the last 3 elems in the list to see if it is a valid domain
