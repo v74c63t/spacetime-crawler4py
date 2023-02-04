@@ -21,14 +21,15 @@ unique_links = set()
 prev_urls = []
 prev_resps = []
 word_freq = defaultdict(int)
-most_common_words = []
 
 def output_report():
     with open("output.txt", "w") as output_file:
-        output_file.write(f"Number of unique pages: {len(unique_links)}\n")
-        output_file.write(f"Longest page: {largest_pg[0]}\n")
-        output_file.write(f"Most common words: {sorted(word_freq.items(), key=lambda x: x[1], reverse=True)[0:50]}\n")
-        output_file.write(f"Number of sub domains in ics.uci.edu: {sum(sub_domains.values())}\n")
+        output_file.write(f"Number of unique pages: {len(unique_links)}.\n")
+        output_file.write(f"The longest page is {largest_pg[0]} with {largest_pg[1]} words.\n")
+        output_file.write(f"Most common words: {sorted(word_freq.items(), key=lambda x: x[1], reverse=True)[0:50]}.\n")
+        output_file.write(f"Number of subdomains in ics.uci.edu: {sum(sub_domains.values())}\n")
+        for k, v in sorted(sub_domains.items(), key=lambda x: x[0]):
+            output_file.write(f"    {k}, {v}")
 
 
 def report_info(resp):
