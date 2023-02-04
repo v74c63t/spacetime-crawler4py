@@ -33,3 +33,4 @@ class Worker(Thread):
             self.frontier.mark_url_complete(tbd_url)
             #added politeness check for current url, defaults to config
             time.sleep(scraper.politenessCheck(tbd_url))
+        scraper.output_report()

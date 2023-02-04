@@ -23,11 +23,17 @@ prev_resps = []
 word_freq = defaultdict(int)
 most_common_words = []
 
+def output_report():
+    with open("output.txt", "w") as output_file:
+        output_file.write(f"Number of unique pages: {len(unique_links)}\n")
+        output_file.write(f"Longest page: {largest_pg[0]}\n")
+        output_file.write(f"Most common words: {sorted(word_freq.items(), key=lambda x: x[1], reverse=True)[0:50]}\n")
+        output_file.write(f"Number of sub domains in ics.uci.edu: {sum(sub_domains.values())}\n")
+
+
 def report_info(resp):
     global word_freq
     word_freq = tokenizer.tokenizeCount(resp, word_freq)
-    global most_common_words
-    most_common_words = sorted(word_freq.items(), key=lambda x: x[1], reverse=True)[0:50]
     if resp.raw_response != None:
         soup = BeautifulSoup(resp.raw_response.content, "lxml")
         words = nltk.tokenize.word_tokenize(soup.get_text())
@@ -48,6 +54,7 @@ def report_info(resp):
     # add the subdomain in a dictionary add to count
     # key: subdomain value: unique pgs
     # sort alphabetically
+
 
 def scraper(url, resp):
     # maybe keep track of prev urls in a list/set not sure
@@ -96,7 +103,6 @@ def extract_next_links(url, resp):
 
     soup = BeautifulSoup(resp.raw_response.content, "lxml")
     resp_text = soup.get_text()
-    resp_text.encode('utf-8', errors='ignore')
 
     # CHECK TEXT CONTENT
     # we can either check for very large files by seeing if it exceeds a certain word count we just reject it
@@ -118,7 +124,6 @@ def extract_next_links(url, resp):
     global prev_resps
     for prev_resp in prev_resps: 
         prev_text = BeautifulSoup(prev_resp.raw_response.content, "lxml").get_text()
-        prev_text.encode('utf-8', errors='ignore')
         if near_duplicate(prev_text, resp_text, 10): # might change threshold
             return urls
         # we are using BeautifulSoup lxml to find all the a tags in the html file that also has a
