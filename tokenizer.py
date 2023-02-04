@@ -17,7 +17,7 @@ def tokenizeCount(resp, freq):
     # word_freq: defaultdict(int)
     # we are assuming that wDict is a defaultdictionary of integers
     if resp.raw_response != None:
-        soup = BeautifulSoup(resp.raw_response.content, "lxml")
+        soup = BeautifulSoup(resp.raw_response.content.decode('utf-8','ignore'), "lxml")
         text = soup.get_text()
         words = word_tokenize(text.encode('utf-8', errors='ignore'))
         for word in words:
