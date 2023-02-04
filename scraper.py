@@ -38,7 +38,7 @@ def report_info(resp):
     # if domain is ics.uci.edu
     if parsed.netloc[-12:] == '.ics.uci.edu' and parsed.netloc != 'www.ics.uci.edu':
         #check if this is correct
-        url = resp.url.urldefrag()[0]
+        url = urldefrag(resp.url)[0]
         parsed =  parsed._replace(fragment="", params="", query="",path="")
         # assuming the url has not been crawled before
         if url not in unique_links:
@@ -76,11 +76,12 @@ def extract_next_links(url, resp):
     #is_valid(url)
     urls = list()
         # check if there is actually data associated with the url (make sure it is not a dead url)
-    if resp.raw_response != None and len(resp.raw_response.content) == 0:
+    if resp.raw_response == None or len(resp.raw_response.content) == 0:
         return list()
         
 
     # check if we visited the url before
+    global prev_urls
     for prev_url in prev_urls:
         if resp.url == prev_url:return urls
 
@@ -104,6 +105,7 @@ def extract_next_links(url, resp):
 
     
     # check for near duplicate pages
+    global prev_resps
     for prev_resp in prev_resps: 
         prev_text = BeautifulSoup(prev_resp.raw_response.content, "lxml").get_text()
         if near_duplicate(prev_text, resp_text, 10): # might change threshold
@@ -128,9 +130,7 @@ def extract_next_links(url, resp):
             # it essentially ensures that we will have the absolute url and not the relative url
         urls.append(defrag)
         # time.sleep(defaulttime)
-    global prev_resps
     prev_resps.append(resp) # not sure if its actually global var have ot check
-    global prev_urls
     prev_urls.append(resp.url)
     global unique_links
     unique_links.add(base)
