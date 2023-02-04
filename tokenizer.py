@@ -19,7 +19,7 @@ def tokenizeCount(resp, freq):
     if resp.raw_response != None:
         soup = BeautifulSoup(resp.raw_response.content.decode('utf-8','ignore'), "lxml")
         text = soup.get_text()
-        words = word_tokenize(text.encode('utf-8', errors='ignore'))
+        words = word_tokenize(text)
         for word in words:
             if word not in stop_words and word.isalnum():
                 # if the word is not a stop word and it is alphanumeric
