@@ -16,7 +16,7 @@ config.read("config.ini")
 userAgent = config['IDENTIFICATION']['USERAGENT']
 defaulttime = float(config['CRAWLER']['POLITENESS'])
 sub_domains = defaultdict(int) 
-largest_pg = ('',0) #(resp, word count) 
+largest_pg = ('',0) #(resp.url, word count) 
 unique_links = set() 
 prev_urls = []
 prev_resps = []
@@ -44,6 +44,7 @@ def report_info(soup, url):
     words = nltk.tokenize.word_tokenize(soup.get_text())
     global largest_pg # check if correct
     if len(words) > largest_pg[1]: largest_pg = (url, len(words))
+
     # keep track of longest page
     global sub_domains
     parsed = urlparse(url)
@@ -126,7 +127,7 @@ def extract_next_links(url, resp):
 
     
     # check for near duplicate pages
-    
+  
     global prev_simhashes
     curr_simhash = simhash.Simhash(resp_text)
     for prev_simhash in prev_simhashes: 
