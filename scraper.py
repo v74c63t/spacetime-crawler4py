@@ -36,7 +36,7 @@ def report_info(resp):
     global word_freq
     word_freq = tokenizer.tokenizeCount(resp, word_freq)
     if resp.raw_response != None:
-        soup = BeautifulSoup(resp.raw_response.content, "lxml")
+        soup = BeautifulSoup(resp.raw_response.content.decode('utf-8','ignore'), "lxml")
         words = nltk.tokenize.word_tokenize(soup.get_text())
         global largest_pg # check if correct
         if len(words) > largest_pg[1]: largest_pg = (resp.url, len(words))
@@ -102,7 +102,7 @@ def extract_next_links(url, resp):
                 return urls
 
 
-    soup = BeautifulSoup(resp.raw_response.content, "lxml")
+    soup = BeautifulSoup(resp.raw_response.content.decode('utf-8','ignore'), "lxml")
     resp_text = soup.get_text()
 
     # CHECK TEXT CONTENT
@@ -124,7 +124,7 @@ def extract_next_links(url, resp):
     # check for near duplicate pages
     global prev_resps
     for prev_resp in prev_resps: 
-        prev_text = BeautifulSoup(prev_resp.raw_response.content, "lxml").get_text()
+        prev_text = BeautifulSoup(prev_resp.raw_response.content.decode('utf-8','ignore'), "lxml").get_text()
         if near_duplicate(prev_text, resp_text, 10): # might change threshold
             return urls
         # we are using BeautifulSoup lxml to find all the a tags in the html file that also has a
@@ -167,7 +167,7 @@ def is_valid(url):
             + r"|wav|avi|mov|mpeg|ram|m4v|mkv|ogg|ogv|pdf"
             + r"|ps|eps|tex|ppt|pptx|doc|docx|xls|xlsx|names"
             + r"|data|dat|exe|bz2|tar|msi|bin|7z|psd|dmg|iso"
-            + r"|epub|dll|cnf|tgz|sha1"
+            + r"|epub|dll|cnf|tgz|sha1|apk|war"
             + r"|thmx|mso|arff|rtf|jar|csv|img|jpeg|jpg|png"
             + r"|rm|smil|wmv|swf|wma|zip|rar|gz|ppsx|pps|ova)$", parsed.path.lower()):
             return False
@@ -177,7 +177,7 @@ def is_valid(url):
             + r"|wav|avi|mov|mpeg|ram|m4v|mkv|ogg|ogv|pdf"
             + r"|ps|eps|tex|ppt|pptx|doc|docx|xls|xlsx|names"
             + r"|data|dat|exe|bz2|tar|msi|bin|7z|psd|dmg|iso"
-            + r"|epub|dll|cnf|tgz|sha1"
+            + r"|epub|dll|cnf|tgz|sha1|apk|war"
             + r"|thmx|mso|arff|rtf|jar|csv|img|jpeg|jpg|png"
             + r"|rm|smil|wmv|swf|wma|zip|rar|gz|ppsx|pps|ova)$", parsed.query.lower()):
             return False
@@ -187,7 +187,7 @@ def is_valid(url):
             + r"|wav|avi|mov|mpeg|ram|m4v|mkv|ogg|ogv|pdf"
             + r"|ps|eps|tex|ppt|pptx|doc|docx|xls|xlsx|names"
             + r"|data|dat|exe|bz2|tar|msi|bin|7z|psd|dmg|iso"
-            + r"|epub|dll|cnf|tgz|sha1"
+            + r"|epub|dll|cnf|tgz|sha1|apk|war"
             + r"|thmx|mso|arff|rtf|jar|csv|img|jpeg|jpg|png"
             + r"|rm|smil|wmv|swf|wma|zip|rar|gz|ppsx|pps|ova).*$", parsed.query.lower()):
             return False
