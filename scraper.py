@@ -21,6 +21,7 @@ unique_links = set()
 prev_urls = []
 prev_resps = []
 word_freq = defaultdict(int)
+prev_simhashes = []
 
 def output_report():
     with open("output.txt", "w") as output_file:
@@ -32,21 +33,25 @@ def output_report():
             output_file.write(f"    {k}, {v}")
 
 
-def report_info(resp):
+def report_info(soup, url):
+    #soup = BeautifulSoup(resp.raw_response.content.decode('utf-8','ignore'), "lxml")
+
     global word_freq
-    word_freq = tokenizer.tokenizeCount(resp, word_freq)
-    if resp.raw_response != None:
-        soup = BeautifulSoup(resp.raw_response.content.decode('utf-8','ignore'), "lxml")
-        words = nltk.tokenize.word_tokenize(soup.get_text())
-        global largest_pg # check if correct
-        if len(words) > largest_pg[1]: largest_pg = (resp.url, len(words))
+    word_freq = tokenizer.tokenizeCount(soup, word_freq)
+
+    #if resp.raw_response != None:
+        #soup = BeautifulSoup(resp.raw_response.content, "lxml")
+    words = nltk.tokenize.word_tokenize(soup.get_text())
+    global largest_pg # check if correct
+    if len(words) > largest_pg[1]: largest_pg = (url, len(words))
+
     # keep track of longest page
     global sub_domains
-    parsed = urlparse(resp.url)
+    parsed = urlparse(url)
     # if domain is ics.uci.edu
     if parsed.netloc[-12:] == '.ics.uci.edu' and parsed.netloc != 'www.ics.uci.edu':
         #check if this is correct
-        url = urldefrag(resp.url)[0]
+        url = urldefrag(url)[0]
         parsed =  parsed._replace(fragment="", params="", query="",path="")
         # assuming the url has not been crawled before
         if url not in unique_links:
@@ -63,7 +68,7 @@ def scraper(url, resp):
     # if we have just return an empty list
     # this could be done in the for loop that loops over list returned by extract_next_links
     # maybe add a check for text content here and if there isnt much just dont call extract_next_link
-    report_info(resp) # figure out how to get this info to a file or something
+    #report_info(resp) # figure out how to get this info to a file or something
     links = extract_next_links(url, resp)
     return [link for link in links if is_valid(link)]
 
@@ -122,14 +127,20 @@ def extract_next_links(url, resp):
 
     
     # check for near duplicate pages
-    global prev_resps
-    for prev_resp in prev_resps: 
-        prev_text = BeautifulSoup(prev_resp.raw_response.content.decode('utf-8','ignore'), "lxml").get_text()
-        if near_duplicate(prev_text, resp_text, 10): # might change threshold
+  
+    global prev_simhashes
+    curr_simhash = simhash.Simhash(resp_text)
+    for prev_simhash in prev_simhashes: 
+        #prev_text = BeautifulSoup(prev_resp.raw_response.content.decode('utf-8','ignore'), "lxml").get_text()
+        #if near_duplicate(prev_text, resp_text, 10): # might change threshold
+        if prev_simhash.distance(curr_simhash) < 10:
             return urls
+    prev_simhashes.append(curr_simhash)
         # we are using BeautifulSoup lxml to find all the a tags in the html file that also has a
         # href attribute which is used to contain links that link to different pages or sites
         # we then use get to get the link associated with the href attribute
+    
+    report_info(soup, resp.url)
 
     # parse resp.raw_response.content look into BeautifulSoup, lxml
     # resp.raw_response.content should be html content
