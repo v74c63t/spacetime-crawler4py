@@ -34,5 +34,4 @@ class Worker(Thread):
             #added politeness check for current url, defaults to config
             #time.sleep(scraper.politenessCheck(tbd_url))
             time.sleep(self.config.time_delay)
-            break
         scraper.output_report()
