@@ -16,7 +16,7 @@ config.read("config.ini")
 userAgent = config['IDENTIFICATION']['USERAGENT']
 defaulttime = float(config['CRAWLER']['POLITENESS'])
 sub_domains = defaultdict(int) 
-largest_pg = ('',0) #(resp, word count) 
+largest_pg = ('',0) #(resp.url, word count) 
 unique_links = set() 
 prev_urls = []
 prev_resps = []
@@ -39,7 +39,7 @@ def report_info(resp):
         soup = BeautifulSoup(resp.raw_response.content, "lxml")
         words = nltk.tokenize.word_tokenize(soup.get_text())
         global largest_pg # check if correct
-        if len(words) > largest_pg[1]: largest_pg = (resp, len(words))
+        if len(words) > largest_pg[1]: largest_pg = (resp.url, len(words))
     # keep track of longest page
     global sub_domains
     parsed = urlparse(resp.url)
