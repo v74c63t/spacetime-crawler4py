@@ -14,7 +14,8 @@ from difflib import SequenceMatcher
 config = configparser.ConfigParser()
 config.read("config.ini")
 userAgent = config['IDENTIFICATION']['USERAGENT']
-defaulttime = float(config['CRAWLER']['POLITENESS'])
+default_time = float(config['CRAWLER']['POLITENESS'])
+polite_time
 sub_domains = defaultdict(int) 
 largest_pg = ('',0) #(resp.url, word count) 
 unique_links = set() 
@@ -244,6 +245,8 @@ def is_valid(url):
         rp = urllib.robotparser.RobotFileParser()
         rp.set_url(robot)
         rp.read()
+        if (rp.crawl_delay()): polite_time = rp.crawl_delay()
+        else: polite_time = default_time
         if rp.can_fetch(userAgent, url): return True
         else: return False
         # return not re.match(
@@ -269,13 +272,3 @@ def near_duplicate(pg1, pg2, threshold):
     s1 = simhash.Simhash(pg1)
     s2 = simhash.Simhash(pg2)
     return s1.distance(s2) < threshold
-
-def politenessCheck(url):
-    robot = urljoin(url, '/robots.txt')
-    rp = urllib.robotparser.RobotFileParser()
-    rp.set_url(robot)
-    rp.read()
-    if (rp.crawl_delay(userAgent)):
-         return rp.crawl_delay(userAgent)
-    else:
-         return defaulttime
