@@ -36,8 +36,7 @@ def output_report():
 def report_info(text, url):
     #soup = BeautifulSoup(resp.raw_response.content.decode('utf-8','ignore'), "lxml")
 
-    words = nltk.tokenize.word_tokenize(text)
-    words = [word for word in words if word.isalnum()]        # get alphanumeric words
+    words = nltk.tokenize.word_tokenize(text.lower())
 
     global word_freq  # get most common words, excluding stop words
     word_freq = tokenizer.tokenizeCount(words, word_freq)
@@ -124,7 +123,7 @@ def extract_next_links(url, resp):
     if len(resp_text) > 2000: # considered large file
         if len(resp_text) > 20000: # very unlikely to not be low info
             return urls
-        if len(tokenizer.remove_stop_words(resp_text)) < 100: # considered low info
+        if len(tokenizer.remove_stop_words(resp_text.lower())) < 100: # considered low info
             return urls
 
     

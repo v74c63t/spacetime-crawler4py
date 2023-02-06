@@ -18,8 +18,8 @@ def tokenizeCount(words, freq):
     # we are assuming that wDict is a defaultdictionary of integers
     #if resp.raw_response != None:
     #words = word_tokenize(text)
-    for word in words.lower():
-        if word not in set(stopwords.words('english')):
+    for word in words:
+        if word not in set(stopwords.words('english')) and word.isalnum():
             # if the word is not a stop word and it is alphanumeric
             # we will turn the word into lower case and add 1 to the count 
             # in the defaultdictionary for said word
@@ -30,9 +30,9 @@ def tokenizeCount(words, freq):
     # return dict(sorted(wDict.items(), key = lambda x:(x[1] * -1, x[0])))
 
 def remove_stop_words(resp_text):
-    words = word_tokenize(resp_text)
+    words = word_tokenize(resp_text.lower())
     filter = []
-    for word in words.lower():
+    for word in words:
         if word not in set(stopwords.words('english')) and word.isalnum():
             filter.append(word)
     return filter
