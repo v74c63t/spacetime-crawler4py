@@ -15,10 +15,10 @@ config = configparser.ConfigParser()
 config.read("config.ini")
 userAgent = config['IDENTIFICATION']['USERAGENT']
 default_time = float(config['CRAWLER']['POLITENESS'])
-polite_time
+polite_time = 0
 sub_domains = defaultdict(int) 
 largest_pg = ('',0) #(resp.url, word count) 
-unique_links = set() 
+unique_links = set("https://www.ics.uci.edu","https://www.cs.uci.edu","https://www.informatics.uci.edu","https://www.stat.uci.edu") 
 prev_urls = []
 #prev_resps = []
 word_freq = defaultdict(int)
@@ -146,23 +146,25 @@ def extract_next_links(url, resp):
     # parse resp.raw_response.content look into BeautifulSoup, lxml
     # resp.raw_response.content should be html content
     # we want all the a tags that have href attributes
-    base = urldefrag(resp.url)[0] # not sure if need to defrag base
+    base = urldefrag(resp.url)[0]
+    global unique_links
     links = {a.get('href') for a in soup.find_all('a') if a.get('href')!="#"}
     for link in links:
         #the urls in the list have to be defragmented which can be done with urlparse.urldefrag
         #make sure to change relative urls to absolute urls (look into urljoin)
         #these two steps need to be done before adding it to the url list
-        defrag = urldefrag(link)[0] # defrag link     
+        defrag = urldefrag(link)[0] # defrag link
+        
         parsed = urlparse(defrag)
         if parsed.netloc == "":
             defrag = urljoin(base, defrag) # join the base to link that is found/ check if this is working correctly if not add / to beginning of url
             # it essentially ensures that we will have the absolute url and not the relative url
+        unique_links.add(defrag) # Assumption: even if the link isn't traversable or valid, it is still a unique link that was visited/encountered,
+        #so we are adding it to our list based on that
         urls.append(defrag)
-        # time.sleep(defaulttime)
     #prev_resps.append(resp) # not sure if its actually global var have ot check
     prev_urls.append(resp.url)
-    global unique_links
-    unique_links.add(base)         # either add this at the top or in the for loop
+    
     return urls
 
 def is_valid(url):
