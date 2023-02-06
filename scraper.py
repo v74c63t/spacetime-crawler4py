@@ -231,11 +231,13 @@ def is_valid(url):
             return False
 
         # have to check for traps look at teh paths? compare to previous urls? 
-        if 'calendar' in url: return False # calendar is a trap
+        if ('calendar' in url.lower()): return False # calendar is a trap
+        if 'events' in parsed.path: return False
         if re.match(
             r".*/[0-9][0-9][0-9][0-9]\-[0-1][0-9]\-[0-3][0-9]/?.*$", parsed.path.lower()):
             return False # deal with calendar trap
- 
+        if '?share=' in parsed.query or 'date=' in parsed.query: return False
+
         #check the robots.txt file (does the website permit the crawl)
         robot = urljoin(url, '/robots.txt')
         # access the file
