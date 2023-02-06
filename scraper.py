@@ -20,7 +20,7 @@ sub_domains = defaultdict(int)
 largest_pg = ('',0) #(resp.url, word count) 
 unique_links = set() 
 prev_urls = []
-prev_resps = []
+#prev_resps = []
 word_freq = defaultdict(int)
 prev_simhashes = []
 
@@ -28,21 +28,24 @@ def output_report():
     with open("output.txt", "w") as output_file:
         output_file.write(f"Number of unique pages: {len(unique_links)}.\n")
         output_file.write(f"The longest page is {largest_pg[0]} with {largest_pg[1]} words.\n")
-        output_file.write(f"Most common words: {sorted(word_freq.items(), key=lambda x: x[1], reverse=True)[0:50]}.\n")
+        output_file.write(f"The 50 most common words: {sorted(word_freq.items(), key=lambda x: x[1], reverse=True)[0:50]}.\n")
         output_file.write(f"Number of subdomains in ics.uci.edu: {sum(sub_domains.values())}\n")
         for k, v in sorted(sub_domains.items(), key=lambda x: x[0]):
-            output_file.write(f"    {k}, {v}")
+            output_file.write(f"    {k}, {v}\n")
 
 
-def report_info(soup, url):
+def report_info(text, url):
     #soup = BeautifulSoup(resp.raw_response.content.decode('utf-8','ignore'), "lxml")
 
-    global word_freq
-    word_freq = tokenizer.tokenizeCount(soup, word_freq)
+    words = nltk.tokenize.word_tokenize(text.lower())
+
+    global word_freq  # get most common words, excluding stop words
+    word_freq = tokenizer.tokenizeCount(words, word_freq)
 
     #if resp.raw_response != None:
         #soup = BeautifulSoup(resp.raw_response.content, "lxml")
-    words = nltk.tokenize.word_tokenize(soup.get_text())
+    #words = nltk.tokenize.word_tokenize(text)
+
     global largest_pg # check if correct
     if len(words) > largest_pg[1]: largest_pg = (url, len(words))
 
@@ -91,10 +94,9 @@ def extract_next_links(url, resp):
     #if it is permitted to crawl the url, parse resp.raw_response.content for links
     #is_valid(url)
     
-        # check if there is actually data associated with the url (make sure it is not a dead url)
+    # check if there is actually data associated with the url (make sure it is not a dead url)
     if resp.raw_response == None or len(resp.raw_response.content) == 0:
-        return list()
-        
+        return list()   
 
     # check if we visited the url before or if they are similar to previous urls
     parsed = urlparse(url)
@@ -106,7 +108,6 @@ def extract_next_links(url, resp):
             if SequenceMatcher(None, parsed.path, prev_parsed.path).ratio() >= .90:  # might change threshold later
                 # check query too?
                 return urls
-
 
     soup = BeautifulSoup(resp.raw_response.content.decode('utf-8','ignore'), "lxml")
     resp_text = soup.get_text()
@@ -123,12 +124,11 @@ def extract_next_links(url, resp):
     if len(resp_text) > 2000: # considered large file
         if len(resp_text) > 20000: # very unlikely to not be low info
             return urls
-        if len(tokenizer.remove_stop_words(resp_text)) < 100: # considered low info
+        if len(tokenizer.remove_stop_words(resp_text.lower())) < 100: # considered low info
             return urls
 
     
     # check for near duplicate pages
-  
     global prev_simhashes
     curr_simhash = simhash.Simhash(resp_text)
     for prev_simhash in prev_simhashes: 
@@ -141,7 +141,7 @@ def extract_next_links(url, resp):
         # href attribute which is used to contain links that link to different pages or sites
         # we then use get to get the link associated with the href attribute
     
-    report_info(soup, resp.url)
+    report_info(resp_text, resp.url)
 
     # parse resp.raw_response.content look into BeautifulSoup, lxml
     # resp.raw_response.content should be html content
@@ -149,9 +149,9 @@ def extract_next_links(url, resp):
     base = urldefrag(resp.url)[0] # not sure if need to defrag base
     links = {a.get('href') for a in soup.find_all('a') if a.get('href')!="#"}
     for link in links:
-            #the urls in the list have to be defragmented which can be done with urlparse.urldefrag
-            #make sure to change relative urls to absolute urls (look into urljoin)
-            #these two steps need to be done before adding it to the url list
+        #the urls in the list have to be defragmented which can be done with urlparse.urldefrag
+        #make sure to change relative urls to absolute urls (look into urljoin)
+        #these two steps need to be done before adding it to the url list
         defrag = urldefrag(link)[0] # defrag link     
         parsed = urlparse(defrag)
         if parsed.netloc == "":
@@ -159,10 +159,10 @@ def extract_next_links(url, resp):
             # it essentially ensures that we will have the absolute url and not the relative url
         urls.append(defrag)
         # time.sleep(defaulttime)
-    prev_resps.append(resp) # not sure if its actually global var have ot check
+    #prev_resps.append(resp) # not sure if its actually global var have ot check
     prev_urls.append(resp.url)
     global unique_links
-    unique_links.add(base)
+    unique_links.add(base)         # either add this at the top or in the for loop
     return urls
 
 def is_valid(url):
@@ -172,6 +172,9 @@ def is_valid(url):
     try:
         parsed = urlparse(url)
         if parsed.scheme not in set(["http", "https"]):
+            return False
+        query = parsed.query
+        if "share=" == query[0:6] or "ical=" == query[0:5]:
             return False
         if re.match(
             r".*\.(css|js|bmp|gif|jpe?g|ico"
