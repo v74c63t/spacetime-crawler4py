@@ -96,7 +96,7 @@ def extract_next_links(url, resp):
 
     soup = BeautifulSoup(resp.raw_response.content.decode('utf-8','ignore'), "lxml")
     resp_text = soup.get_text()
-
+    resp_text_words = nltk.tokenize.word_tokenize(resp_text.lower())
     # CHECK TEXT CONTENT
     # we can either check for very large files by seeing if it exceeds a certain word count we just reject it
     # if len(resp_text) > 20000: return urls
@@ -106,10 +106,10 @@ def extract_next_links(url, resp):
     # if len(resp_text) after stripping stop words < 100: return urls
     # or we can do both
 
-    if len(resp_text) > 2000: # considered large file
-        if len(resp_text) > 20000: # very unlikely to not be low info
+    if len(resp_text_words) > 2000: # considered large file
+        if len(resp_text_words) > 20000: # very unlikely to not be low info
             return urls
-        if len(tokenizer.remove_stop_words(resp_text.lower())) < 100: # considered low info
+        if len(tokenizer.remove_stop_words(resp_text_words)) < 100: # considered low info
             return urls
 
     
