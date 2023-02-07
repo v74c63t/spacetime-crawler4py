@@ -48,22 +48,7 @@ def report_info(text, url):
 
     global largest_pg # check if correct
     if len(words) > largest_pg[1]: largest_pg = (url, len(words))
-
     # keep track of longest page
-    global sub_domains
-    parsed = urlparse(url)
-    # if domain is ics.uci.edu
-    if parsed.netloc[-12:] == '.ics.uci.edu' and parsed.netloc != 'www.ics.uci.edu':
-        #check if this is correct
-        url = urldefrag(url)[0]
-        parsed =  parsed._replace(fragment="", params="", query="",path="")
-        # assuming the url has not been crawled before
-        if url not in unique_links:
-            sub_domain = urlunparse(parsed)
-            sub_domains[sub_domain] += 1
-    # add the subdomain in a dictionary add to count
-    # key: subdomain value: unique pgs
-    # sort alphabetically
 
 
 def scraper(url, resp):
@@ -148,17 +133,33 @@ def extract_next_links(url, resp):
     # we want all the a tags that have href attributes
     base = urldefrag(resp.url)[0]
     global unique_links
+    global sub_domains
+    
     links = {a.get('href') for a in soup.find_all('a') if a.get('href')!="#"}
     for link in links:
         #the urls in the list have to be defragmented which can be done with urlparse.urldefrag
         #make sure to change relative urls to absolute urls (look into urljoin)
         #these two steps need to be done before adding it to the url list
         defrag = urldefrag(link)[0] # defrag link
-        
         parsed = urlparse(defrag)
+        
         if parsed.netloc == "":
             defrag = urljoin(base, defrag) # join the base to link that is found/ check if this is working correctly if not add / to beginning of url
             # it essentially ensures that we will have the absolute url and not the relative url
+        
+        # if domain is ics.uci.edu
+        if parsed.netloc[-12:] == '.ics.uci.edu' and parsed.netloc != 'www.ics.uci.edu':
+            #check if this is correct
+            url = urldefrag(url)[0]
+            parsed =  parsed._replace(fragment="", params="", query="",path="")
+            # assuming the url has not been crawled before
+            if url not in unique_links:
+                sub_domain = urlunparse(parsed)
+                sub_domains[sub_domain] += 1
+                # add the subdomain in a dictionary add to count
+            # key: subdomain value: unique pgs
+            # sort alphabetically
+        
         unique_links.add(defrag) # Assumption: even if the link isn't traversable or valid, it is still a unique link that was visited/encountered,
         #so we are adding it to our list based on that
         urls.append(defrag)
