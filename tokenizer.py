@@ -29,8 +29,8 @@ def tokenizeCount(words, freq):
     # wDict is a defaultdict so this might cause problems so ill just return the updated dict
     # return dict(sorted(wDict.items(), key = lambda x:(x[1] * -1, x[0])))
 
-def remove_stop_words(resp_text):
-    words = word_tokenize(resp_text.lower())
+def remove_stop_words(words):
+    #words = word_tokenize(resp_text.lower())
     filter = []
     for word in words:
         if word not in set(stopwords.words('english')) and word.isalnum():
