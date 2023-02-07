@@ -84,7 +84,7 @@ def extract_next_links(url, resp):
         return list()   
 
     # check if we visited the url before or if they are similar to previous urls
-    parsed = urlparse(url)
+    parsed = urlparse(resp.url)
     global prev_urls
     for prev_url in prev_urls:
         if resp.url == prev_url:return urls
@@ -150,11 +150,11 @@ def extract_next_links(url, resp):
         # if domain is ics.uci.edu
         if parsed.netloc[-12:] == '.ics.uci.edu' and parsed.netloc != 'www.ics.uci.edu':
             #check if this is correct
-            url = urldefrag(url)[0]
-            parsed =  parsed._replace(fragment="", params="", query="",path="")
+            #url = urldefrag(url)[0]
+            sub_domain =  parsed._replace(fragment="", params="", query="",path="")
             # assuming the url has not been crawled before
-            if url not in unique_links:
-                sub_domain = urlunparse(parsed)
+            if defrag not in unique_links:
+                sub_domain = urlunparse(sub_domain)
                 sub_domains[sub_domain] += 1
                 # add the subdomain in a dictionary add to count
             # key: subdomain value: unique pgs
