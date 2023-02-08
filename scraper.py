@@ -20,9 +20,8 @@ sub_domains = defaultdict(int) #{key: subdomain, value: # of unique pages}
 largest_pg = ('',0) #(resp.url, word count) 
 unique_links = set("https://www.ics.uci.edu","https://www.cs.uci.edu","https://www.informatics.uci.edu","https://www.stat.uci.edu") 
 prev_urls = []
-#prev_resps = []
 word_freq = defaultdict(int) #{key: word, value: word count}
-prev_simhashes = []
+prev_simhashes = [] # list of simhashes of previous urls which are used for near duplicate detections
 
 def output_report():
     with open("output.txt", "w") as output_file:
@@ -35,29 +34,24 @@ def output_report():
 
 
 def report_info(text, url):
-    #soup = BeautifulSoup(resp.raw_response.content.decode('utf-8','ignore'), "lxml")
 
     words = nltk.tokenize.word_tokenize(text.lower())
 
-    global word_freq  # get most common words, excluding stop words
+    # word_freq is a default dictionary of integers with the keys being the word and the values being the word count
+    # that is used to record how frequent words that are not considered stop words appear in each of the webpages 
+    # we use tokenizeCount with the words list of the current page to update the global dictionary accordingly
+    # this is used in output_report to generate the 50 most common words found during the crawl
+    global word_freq 
     word_freq = tokenizer.tokenizeCount(words, word_freq)
 
-    #if resp.raw_response != None:
-        #soup = BeautifulSoup(resp.raw_response.content, "lxml")
-    #words = nltk.tokenize.word_tokenize(text)
-
-    global largest_pg # check if correct
+    # largest_pg is a tuple containing an url and the number of words of that page
+    # we compare the amount of words of the current url to the amount of words of the current largest page
+    # largest page will be replaced if the current url has more words
+    global largest_pg 
     if len(words) > largest_pg[1]: largest_pg = (url, len(words))
-    # keep track of longest page
 
 
 def scraper(url, resp):
-    # maybe keep track of prev urls in a list/set not sure
-    # maybe keep a check to see if we've been to the url before?
-    # if we have just return an empty list
-    # this could be done in the for loop that loops over list returned by extract_next_links
-    # maybe add a check for text content here and if there isnt much just dont call extract_next_link
-    #report_info(resp) # figure out how to get this info to a file or something
     links = extract_next_links(url, resp)
     return [link for link in links if is_valid(link)]
 
@@ -298,7 +292,7 @@ def is_valid(url):
         # if it does not, we are prohibited from crawling that url
         if rp.can_fetch(userAgent, url): return True
         else: return False
-        
+
     except TypeError:
         print ("TypeError for ", parsed)
         raise
