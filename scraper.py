@@ -16,12 +16,12 @@ config.read("config.ini")
 userAgent = config['IDENTIFICATION']['USERAGENT']
 default_time = float(config['CRAWLER']['POLITENESS'])
 polite_time = 0
-sub_domains = defaultdict(int) 
+sub_domains = defaultdict(int) #{key: subdomain, value: # of unique pages}
 largest_pg = ('',0) #(resp.url, word count) 
 unique_links = set("https://www.ics.uci.edu","https://www.cs.uci.edu","https://www.informatics.uci.edu","https://www.stat.uci.edu") 
 prev_urls = []
 #prev_resps = []
-word_freq = defaultdict(int)
+word_freq = defaultdict(int) #{key: word, value: word count}
 prev_simhashes = []
 
 def output_report():
@@ -68,57 +68,78 @@ def extract_next_links(url, resp):
     # resp.status: the status code returned by the server. 200 is OK, you got the page. Other numbers mean that there was some kind of problem.
     # resp.error: when status is not 200, you can check the error here, if needed.
     urls = list()
+
+    # we reject any pages that do not have a 200 status
+    # we will not crawl the page and therefore return an empty list
     if resp.status != 200:
         print(resp.error)
         return urls
+
+
     # resp.raw_response: this is where the page actually is. More specifically, the raw_response has two parts:
     #         resp.raw_response.url: the url, again
     #         resp.raw_response.content: the content of the page!
     # Return a list with the hyperlinks (as strings) scrapped from resp.raw_response.content
 
-    #if it is permitted to crawl the url, parse resp.raw_response.content for links
-    #is_valid(url)
     
-    # check if there is actually data associated with the url (make sure it is not a dead url)
+    # we check if a response if given or if there is any content in the page to see if there 
+    # is any data associated with the url/basically checking if it's a dead url 
+    # if that is the case, we will not crawl the page and return an empty list                        
     if resp.raw_response == None or len(resp.raw_response.content) == 0:
         return list()   
 
-    # check if we visited the url before or if they are similar to previous urls
+    # we check if we visited the url before or if they are similar to previous urls
     parsed = urlparse(resp.url)
     global prev_urls
     for prev_url in prev_urls:
+        # we compare the current url to all to the global list of all the previous urls 
+        # we crawled to see if there is a match, an empty list is returned if there is a 
+        # match because we will not crawl the page
         if resp.url == prev_url:return urls
         prev_parsed = urlparse(prev_url)
+        # we then compare the paths of the current url to the paths of the previous urls
+        # this is to make sure we do not end up in a trap where we are crawling a url
+        # that has repeating paths and ultimately leads to a page that we have seen/crawled before
         if parsed.netloc == prev_parsed.netloc:
+            # if netlocs of the urls are the same, we imported SequenceMatcher to check the 
+            # similarities of the paths and if the ratio is above a threshold, we will not crawl the page
             if SequenceMatcher(None, parsed.path, prev_parsed.path).ratio() >= .90:  # might change threshold later
                 # check query too?
                 return urls
 
+    # we used BeautifulSoup to get the text content of the page from resp.raw_response.content
+    # we used .decode so it would ignore utf-8 errors
     soup = BeautifulSoup(resp.raw_response.content.decode('utf-8','ignore'), "lxml")
     resp_text = soup.get_text()
     resp_text_words = nltk.tokenize.word_tokenize(resp_text.lower())
-    # CHECK TEXT CONTENT
-    # we can either check for very large files by seeing if it exceeds a certain word count we just reject it
-    # if len(resp_text) > 20000: return urls
-    # or
-    # we can strip all the stop words from the page and see if the remaining word count is lower than a threshold which 
-    # would make it so it has 'low' textual information 
-    # if len(resp_text) after stripping stop words < 100: return urls
-    # or we can do both
 
-    if len(resp_text_words) > 2000: # considered large file
-        if len(resp_text_words) > 20000: # very unlikely to not be low info
+    # we choose to not crawl any pages that are considered large files, but have low information value and return an empty list
+    # we consider any files that exceed 2000 words to be a large file because pages on average are below or
+    # around that word count
+    if len(resp_text_words) > 2000:
+        # we reject any pages with more than 20000 words because we believe that with how large the page is
+        # it is very unlikely for it to not have low information value
+        if len(resp_text_words) > 20000:
             return urls
+        # if the page has between 2000 and 20000 words, we need more information to check if it has low information value
+        # to do so, we take the words of the page and filter out any stop words and see how many words are left
+        # if there are fewer that 100 words left, that means a large part of the page is filled with stop words
+        # and therefore should be considered to have low information value and will be rejected.
         if len(tokenizer.remove_stop_words(resp_text_words)) < 100: # considered low info
             return urls
 
     
-    # check for near duplicate pages
+    # simhash code obtained from here: https://github.com/1e0ng/simhash
+    # we imported the simhash library to determine whether two pages are near duplicates or not
+    # if the distance between the two simhashes (it essentially looks at the difference between 
+    # the two pages) is less than the threshold the two pages are considered near duplicates
     global prev_simhashes
     curr_simhash = simhash.Simhash(resp_text)
     for prev_simhash in prev_simhashes: 
-        #prev_text = BeautifulSoup(prev_resp.raw_response.content.decode('utf-8','ignore'), "lxml").get_text()
-        #if near_duplicate(prev_text, resp_text, 10): # might change threshold
+        # we check if the current page is a near duplicate of any page we have seen before by comparing
+        # its simhash to the simhashes of previous urls kept in a global list
+        # if the current page is a near duplicate with any of the previous pages, we will not crawl the page
+        # and return an empty list
         if prev_simhash.distance(curr_simhash) < 10:
             return urls
     prev_simhashes.append(curr_simhash)
@@ -128,42 +149,45 @@ def extract_next_links(url, resp):
     
     report_info(resp_text, resp.url)
 
-    # parse resp.raw_response.content look into BeautifulSoup, lxml
-    # resp.raw_response.content should be html content
-    # we want all the a tags that have href attributes
     base = urldefrag(resp.url)[0]
     global unique_links
     global sub_domains
-    
+
+    # we are using BeautifulSoup with lxml to find all the a tags in the html file (resp.raw_response.content
+    # contains the html content) that also has a href attribute which is used to contain links that link to 
+    # different pages or sites 
+    # we then use get to get the link associated with the href attribute as long as it is not '#' which means
+    # the page links back to itself
     links = {a.get('href') for a in soup.find_all('a') if a.get('href')!="#"}
     for link in links:
-        #the urls in the list have to be defragmented which can be done with urlparse.urldefrag
-        #make sure to change relative urls to absolute urls (look into urljoin)
-        #these two steps need to be done before adding it to the url list
+        # the urls in the list have to be defragmented which can be done with urlparse.urldefrag
+        # we have make sure to change relative urls to absolute urls 
+        # these two steps need to be done before adding the url to the url list
         defrag = urldefrag(link)[0] # defrag link
         parsed = urlparse(defrag)
         
+        # if the link does not have a netloc, it is most likely a relative url so we use urljoin to join it 
+        # with resp.url to turn it into an absolute url
         if parsed.netloc == "":
-            defrag = urljoin(base, defrag) # join the base to link that is found/ check if this is working correctly if not add / to beginning of url
-            # it essentially ensures that we will have the absolute url and not the relative url
+            defrag = urljoin(base, defrag) 
         
-        # if domain is ics.uci.edu
+        # we check for any unique pages that belongs to a subdomain of ics.uci.edu
         if parsed.netloc[-12:] == '.ics.uci.edu' and parsed.netloc != 'www.ics.uci.edu':
-            #check if this is correct
-            #url = urldefrag(url)[0]
+            # we check if the url is a subdomain of ics.uci.edu by looking at netloc
             sub_domain =  parsed._replace(fragment="", params="", query="",path="")
-            # assuming the url has not been crawled before
+            # if the url is not in unique links, we have not found it so far so it can be counted as a unique page
             if defrag not in unique_links:
+                # we parse out the subdomain using ._replace and urlunparse so it can be used as a key
+                # we use the key in the global default dictionary so we can add to the count to indicate 
+                # we found a unique page for this subdomain
                 sub_domain = urlunparse(sub_domain)
                 sub_domains[sub_domain] += 1
-                # add the subdomain in a dictionary add to count
-            # key: subdomain value: unique pgs
-            # sort alphabetically
-        
-        unique_links.add(defrag) # Assumption: even if the link isn't traversable or valid, it is still a unique link that was visited/encountered,
-        #so we are adding it to our list based on that
+        # Assumption: even if the link isn't traversable or valid, it is still a unique link that was seen/encountered,
+        # so we are adding it as a unique link based on that
+        unique_links.add(defrag) 
+
         urls.append(defrag)
-    #prev_resps.append(resp) # not sure if its actually global var have ot check
+
     prev_urls.append(resp.url)
     
     return urls
@@ -179,6 +203,7 @@ def is_valid(url):
         query = parsed.query
         if "share=" == query[0:6] or "ical=" == query[0:5]:
             return False
+        if '?share=' in parsed.query or 'date=' in parsed.query: return False
         if re.match(
             r".*\.(css|js|bmp|gif|jpe?g|ico"
             + r"|png|tiff?|mid|mp2|mp3|mp4"
@@ -243,7 +268,6 @@ def is_valid(url):
         if re.match(
             r".*/[0-9][0-9][0-9][0-9]\-[0-1][0-9]\-[0-3][0-9]/?.*$", parsed.path.lower()):
             return False # deal with calendar trap
-        if '?share=' in parsed.query or 'date=' in parsed.query: return False
 
         #check the robots.txt file (does the website permit the crawl)
         robot = urljoin(url, '/robots.txt')
@@ -269,12 +293,3 @@ def is_valid(url):
         raise
     except urllib.error.URLError:
         return False
-
-def near_duplicate(pg1, pg2, threshold):
-    # simhash code obtained from here: https://github.com/1e0ng/simhash
-    # we imported the simhash lib to determine whether two pages are near duplicates or not
-    # if the distance between the two pages are less than the threshold the two pages are 
-    # considered near duplicates
-    s1 = simhash.Simhash(pg1)
-    s2 = simhash.Simhash(pg2)
-    return s1.distance(s2) < threshold
