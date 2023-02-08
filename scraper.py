@@ -15,7 +15,7 @@ config = configparser.ConfigParser()
 config.read("config.ini")
 userAgent = config['IDENTIFICATION']['USERAGENT']
 default_time = float(config['CRAWLER']['POLITENESS'])
-polite_time = 0
+polite_time = default_time
 sub_domains = defaultdict(int) #{key: subdomain, value: # of unique pages}
 largest_pg = ('',0) #(resp.url, word count) 
 unique_links = set("https://www.ics.uci.edu","https://www.cs.uci.edu","https://www.informatics.uci.edu","https://www.stat.uci.edu") 
@@ -200,10 +200,15 @@ def is_valid(url):
         parsed = urlparse(url)
         if parsed.scheme not in set(["http", "https"]):
             return False
+        # if these phrases are found in the query, it either leads to external
+        # sites or traps so we return false for urls containing them
         query = parsed.query
         if "share=" == query[0:6] or "ical=" == query[0:5]:
             return False
         if '?share=' in parsed.query or 'date=' in parsed.query: return False
+
+        # this regular expression checks are to make sure that we only look
+        # at webpages/that the url actually points to a webpage
         if re.match(
             r".*\.(css|js|bmp|gif|jpe?g|ico"
             + r"|png|tiff?|mid|mp2|mp3|mp4"
@@ -254,40 +259,46 @@ def is_valid(url):
             + r"|thmx|mso|arff|rtf|jar|csv|img|jpeg|jpg|png"
             + r"|rm|smil|wmv|swf|wma|zip|rar|gz|ppsx|pps|ova)/?.*$", parsed.query.lower()):
             return False
-        # parse the hostname to check if the domain is ics.uci.edu, cs.uci.edu, informatics.uci.edu, stat.uci.edu
-        # consider splitting by . and checking the last 3 elems in the list to see if it is a valid domain
-        # may consider parsing in a different way later
+       
+        # the domain of the url has to be one of the four valid domains (ics.uci.edu, cs.uci.edu
+        # stat.uci.edu, informatics.uci.edu)
+        # we check this by looking at the netloc of the url
         netloc_parse = parsed.netloc.split('.')
         domain = netloc_parse[-3:]
         if (domain[-2:] != ['uci','edu'] or (domain[0] not in ['ics', 'cs', 'stat', 'informatics'])):
             return False
 
-        # have to check for traps look at teh paths? compare to previous urls? 
-        if ('calendar' in url.lower()): return False # calendar is a trap
-        if 'events' in parsed.path: return False
+        # a calendar is considered an infinite trap because it can generate an infinite amount of pages
+        # if you continue to press the next button to a calendar you will never reach an end point
+        # since pages keep getting generated therefore it is a trap
+        # to avoid encountering them we used several checks to detect if the url leads to a calendar
+        # page or not and if it does it will be considered invalid
+        if ('calendar' in url.lower()): return False 
+        if 'events' in parsed.path.lower(): return False
+        # this regular expression check checks to see if there is anything that resembles a date
+        # format ####(year)-##(month)-##(day) in the url so we can reject it because it likely
+        # points to a calendar
         if re.match(
             r".*/[0-9][0-9][0-9][0-9]\-[0-1][0-9]\-[0-3][0-9]/?.*$", parsed.path.lower()):
-            return False # deal with calendar trap
+            return False
 
-        #check the robots.txt file (does the website permit the crawl)
+        # we imported robotparser so we can use RobotFileParser to parse the robots.txt file of the 
+        # site so we can figure out if the site permits the crawl from our user agent and to also
+        # figure out the crawl delay for that site
         robot = urljoin(url, '/robots.txt')
-        # access the file
         rp = urllib.robotparser.RobotFileParser()
         rp.set_url(robot)
         rp.read()
+
+        # we use this to figure out the crawl delay for the site so we can adjust the politeness appropriately
         if (rp.crawl_delay()): polite_time = rp.crawl_delay()
-        else: polite_time = default_time
+
+        # if can_fetch returns true, the url is valid because the robots.txt file permits 
+        # our user agent from crawling that particular url
+        # if it does not, we are prohibited from crawling that url
         if rp.can_fetch(userAgent, url): return True
         else: return False
-        # return not re.match(
-        #     r".*\.(css|js|bmp|gif|jpe?g|ico"
-        #     + r"|png|tiff?|mid|mp2|mp3|mp4"
-        #     + r"|wav|avi|mov|mpeg|ram|m4v|mkv|ogg|ogv|pdf"
-        #     + r"|ps|eps|tex|ppt|pptx|doc|docx|xls|xlsx|names"
-        #     + r"|data|dat|exe|bz2|tar|msi|bin|7z|psd|dmg|iso"
-        #     + r"|epub|dll|cnf|tgz|sha1"
-        #     + r"|thmx|mso|arff|rtf|jar|csv"
-        #     + r"|rm|smil|wmv|swf|wma|zip|rar|gz)$", parsed.path.lower())
+        
     except TypeError:
         print ("TypeError for ", parsed)
         raise
