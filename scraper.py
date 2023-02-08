@@ -68,14 +68,13 @@ def extract_next_links(url, resp):
         print(resp.error)
         return urls
 
-
     # resp.raw_response: this is where the page actually is. More specifically, the raw_response has two parts:
     #         resp.raw_response.url: the url, again
     #         resp.raw_response.content: the content of the page!
     # Return a list with the hyperlinks (as strings) scrapped from resp.raw_response.content
 
     
-    # we check if a response if given or if there is any content in the page to see if there 
+    # we check if a response is given or if there is any content in the page to see if there 
     # is any data associated with the url/basically checking if it's a dead url 
     # if that is the case, we will not crawl the page and return an empty list                        
     if resp.raw_response == None or len(resp.raw_response.content) == 0:
@@ -85,7 +84,7 @@ def extract_next_links(url, resp):
     parsed = urlparse(resp.url)
     global prev_urls
     for prev_url in prev_urls:
-        # we compare the current url to all to the global list of all the previous urls 
+        # we compare the current url to the global list of all the previous urls 
         # we crawled to see if there is a match, an empty list is returned if there is a 
         # match because we will not crawl the page
         if resp.url == prev_url:return urls
@@ -95,9 +94,9 @@ def extract_next_links(url, resp):
         # that has repeating paths and ultimately leads to a page that we have seen/crawled before
         if parsed.netloc == prev_parsed.netloc:
             # if netlocs of the urls are the same, we imported SequenceMatcher to check the 
-            # similarities of the paths and if the ratio is above a threshold, we will not crawl the page
-            if SequenceMatcher(None, parsed.path, prev_parsed.path).ratio() >= .90:  # might change threshold later
-                # check query too?
+            # similarities of the paths and if the two urls are similar by 90% or more, we 
+            # will not crawl the page
+            if SequenceMatcher(None, parsed.path, prev_parsed.path).ratio() >= .90:
                 return urls
 
     # we used BeautifulSoup to get the text content of the page from resp.raw_response.content
