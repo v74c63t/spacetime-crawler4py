@@ -14,7 +14,7 @@ config = configparser.ConfigParser()
 config.read("config.ini")
 userAgent = config['IDENTIFICATION']['USERAGENT']
 default_time = float(config['CRAWLER']['POLITENESS'])
-polite_time = default_time
+polite_time = default_time # used to honor politeness delay per site, if not found defaults to config
 sub_domains = defaultdict(int) #{key: subdomain, value: # of unique pages}
 largest_pg = ('',0) #(resp.url, word count) 
 unique_links = set("https://www.ics.uci.edu","https://www.cs.uci.edu","https://www.informatics.uci.edu","https://www.stat.uci.edu") 
