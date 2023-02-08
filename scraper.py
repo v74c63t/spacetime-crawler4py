@@ -4,7 +4,6 @@ from bs4 import BeautifulSoup
 import lxml
 import urllib.robotparser
 import nltk
-# import time
 import configparser
 from collections import defaultdict
 import simhash
@@ -34,7 +33,7 @@ def output_report():
 
 
 def report_info(text, url):
-
+    # text: the text obtained from BeautifulSoup.get_text() using resp.raw_response.content
     words = nltk.tokenize.word_tokenize(text.lower())
 
     # word_freq is a default dictionary of integers with the keys being the word and the values being the word count
@@ -176,8 +175,8 @@ def extract_next_links(url, resp):
                 # we found a unique page for this subdomain
                 sub_domain = urlunparse(sub_domain)
                 sub_domains[sub_domain] += 1
-        # Assumption: even if the link isn't traversable or valid, it is still a unique link that was seen/encountered,
-        # so we are adding it as a unique link based on that
+        # Assumption: even if the link isn't traversable or valid, it is still a unique link that was seen/encountered 
+        # while running the scrapper, so we are adding it to the unique_links set based on that
         unique_links.add(defrag) 
 
         urls.append(defrag)
@@ -296,5 +295,7 @@ def is_valid(url):
     except TypeError:
         print ("TypeError for ", parsed)
         raise
+    # this error occurs if there is no robots.txt associated with said url and thus we are unable 
+    # to determine if the site permits the crawl so we choose not to crawl in that scenario
     except urllib.error.URLError:
         return False
