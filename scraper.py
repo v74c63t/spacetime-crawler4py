@@ -23,6 +23,7 @@ word_freq = defaultdict(int) #{key: word, value: word count}
 prev_simhashes = [] # list of simhashes of previous urls which are used for near duplicate detections
 
 def output_report():
+    # we use this function to write information for the report to an output file
     with open("output.txt", "w") as output_file:
         output_file.write(f"Number of unique pages: {len(unique_links)}.\n")
         output_file.write(f"The longest page is {largest_pg[0]} with {largest_pg[1]} words.\n")
