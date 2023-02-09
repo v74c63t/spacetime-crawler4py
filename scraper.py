@@ -17,7 +17,7 @@ default_time = float(config['CRAWLER']['POLITENESS'])
 polite_time = default_time # used to honor politeness delay per site, if not found defaults to config
 sub_domains = defaultdict(int) #{key: subdomain, value: # of unique pages}
 largest_pg = ('',0) #(resp.url, word count) 
-unique_links = set("https://www.ics.uci.edu","https://www.cs.uci.edu","https://www.informatics.uci.edu","https://www.stat.uci.edu") 
+unique_links = set() 
 prev_urls = []
 word_freq = defaultdict(int) #{key: word, value: word count}
 prev_simhashes = [] # list of simhashes of previous urls which are used for near duplicate detections
@@ -48,6 +48,21 @@ def report_info(text, url):
     # largest page will be replaced if the current url has more words
     global largest_pg 
     if len(words) > largest_pg[1]: largest_pg = (url, len(words))
+
+    # we check for any unique pages that belongs to a subdomain of ics.uci.edu
+    global sub_domains
+    parsed = urlparse(url)
+    url = urldefrag(url)[0]
+    if parsed.netloc[-12:] == '.ics.uci.edu' and parsed.netloc != 'www.ics.uci.edu':
+        # we check if the url is a subdomain of ics.uci.edu by looking at netloc
+        sub_domain =  parsed._replace(fragment="", params="", query="",path="")
+        # if the url is not in unique links, we have not found it so far so it can be counted as a unique page
+        if url not in unique_links:
+            # we parse out the subdomain using ._replace and urlunparse so it can be used as a key
+            # we use the key in the global default dictionary so we can add to the count to indicate 
+            # we found a unique page for this subdomain
+            sub_domain = urlunparse(sub_domain)
+            sub_domains[sub_domain] += 1
 
 
 def scraper(url, resp):
@@ -135,15 +150,10 @@ def extract_next_links(url, resp):
         if prev_simhash.distance(curr_simhash) < 10:
             return urls
     prev_simhashes.append(curr_simhash)
-        # we are using BeautifulSoup lxml to find all the a tags in the html file that also has a
-        # href attribute which is used to contain links that link to different pages or sites
-        # we then use get to get the link associated with the href attribute
     
     report_info(resp_text, resp.url)
 
     base = urldefrag(resp.url)[0]
-    global unique_links
-    global sub_domains
 
     # we are using BeautifulSoup with lxml to find all the a tags in the html file (resp.raw_response.content
     # contains the html content) that also has a href attribute which is used to contain links that link to 
@@ -162,25 +172,14 @@ def extract_next_links(url, resp):
         # with resp.url to turn it into an absolute url
         if parsed.netloc == "":
             defrag = urljoin(base, defrag) 
-        
-        # we check for any unique pages that belongs to a subdomain of ics.uci.edu
-        if parsed.netloc[-12:] == '.ics.uci.edu' and parsed.netloc != 'www.ics.uci.edu':
-            # we check if the url is a subdomain of ics.uci.edu by looking at netloc
-            sub_domain =  parsed._replace(fragment="", params="", query="",path="")
-            # if the url is not in unique links, we have not found it so far so it can be counted as a unique page
-            if defrag not in unique_links:
-                # we parse out the subdomain using ._replace and urlunparse so it can be used as a key
-                # we use the key in the global default dictionary so we can add to the count to indicate 
-                # we found a unique page for this subdomain
-                sub_domain = urlunparse(sub_domain)
-                sub_domains[sub_domain] += 1
-        # Assumption: even if the link isn't traversable or valid, it is still a unique link that was seen/encountered 
-        # while running the scrapper, so we are adding it to the unique_links set based on that
-        unique_links.add(defrag) 
 
         urls.append(defrag)
 
     prev_urls.append(resp.url)
+
+    global unique_links
+    unique_links.add(base) 
+    # If page is crawled successfully, it is added to the set of unique links
     
     return urls
 
