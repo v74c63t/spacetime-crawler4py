@@ -23,22 +23,33 @@ word_freq = defaultdict(int) #{key: word, value: word count}
 prev_simhashes = [] # list of simhashes of previous urls which are used for near duplicate detections
 
 def output_report():
-    # we use this function to write information for the report to an output file
+    '''
+    this function is used to write the information we need for the report to an output file
+    it takes the global variables we use to store the information and writes it to output.txt
+    '''
     with open("output.txt", "w") as output_file:
         output_file.write(f"Number of unique pages: {len(unique_links)}.\n")
         output_file.write(f"The longest page is {largest_pg[0]} with {largest_pg[1]} words.\n")
         output_file.write(f"The 50 most common words: {sorted(word_freq.items(), key=lambda x: x[1], reverse=True)[0:50]}.\n")
-        output_file.write(f"Number of subdomains in ics.uci.edu: {sum(sub_domains.values())}\n")
+        output_file.write(f"Number of subdomains in ics.uci.edu: {len(sub_domains.keys())}\n")
         for k, v in sorted(sub_domains.items(), key=lambda x: x[0]):
             output_file.write(f"    {k}, {v}\n")
 
 
 def report_info(text, url):
-    # text: the text obtained from BeautifulSoup.get_text() using resp.raw_response.content
+    '''
+    text: the text obtained from BeautifulSoup.get_text() using resp.raw_response.content
+    this function is used to calculated some information needed for the report (primarily
+    the word frequency of a page so it can be used to find the 50 most common words, the largest
+    page that is found through crawling, and the number of unique pages for sub domains in the
+    ics.uci.edu domain)
+
+    '''
     words = nltk.tokenize.word_tokenize(text.lower())
 
     # word_freq is a default dictionary of integers with the keys being the word and the values being the word count
     # that is used to record how frequent words that are not considered stop words appear in each of the webpages 
+    # we consider words to be anything that is alphanumeric and is not a stop word
     # we use tokenizeCount with the words list of the current page to update the global dictionary accordingly
     # this is used in output_report to generate the 50 most common words found during the crawl
     global word_freq 
@@ -53,12 +64,12 @@ def report_info(text, url):
     # we check for any unique pages that belongs to a subdomain of ics.uci.edu
     global sub_domains
     parsed = urlparse(url)
-    url = urldefrag(url)[0]
+    defrag = urldefrag(url)[0]
     if parsed.netloc[-12:] == '.ics.uci.edu' and parsed.netloc != 'www.ics.uci.edu':
         # we check if the url is a subdomain of ics.uci.edu by looking at netloc
         sub_domain =  parsed._replace(fragment="", params="", query="",path="")
         # if the url is not in unique links, we have not found it so far so it can be counted as a unique page
-        if url not in unique_links:
+        if defrag not in unique_links:
             # we parse out the subdomain using ._replace and urlunparse so it can be used as a key
             # we use the key in the global default dictionary so we can add to the count to indicate 
             # we found a unique page for this subdomain
@@ -125,11 +136,11 @@ def extract_next_links(url, resp):
     # we consider any files that exceed 2000 words to be a large file because pages on average are below or
     # around that word count
     if len(resp_text_words) > 2000:
-        # we reject any pages with more than 20000 words because we believe that with how large the page is
+        # we reject any pages with more than 25000 words because we believe that with how large the page is
         # it is very unlikely for it to not have low information value
-        if len(resp_text_words) > 20000:
+        if len(resp_text_words) > 25000:
             return urls
-        # if the page has between 2000 and 20000 words, we need more information to check if it has low information value
+        # if the page has between 2000 and 25000 words, we need more information to check if it has low information value
         # to do so, we take the words of the page and filter out any stop words and see how many words are left
         # if there are fewer that 100 words left, that means a large part of the page is filled with stop words
         # and therefore should be considered to have low information value and will be rejected.
@@ -207,7 +218,7 @@ def is_valid(url):
             + r"|wav|avi|mov|mpeg|ram|m4v|mkv|ogg|ogv|pdf"
             + r"|ps|eps|tex|ppt|pptx|doc|docx|xls|xlsx|names"
             + r"|data|dat|exe|bz2|tar|msi|bin|7z|psd|dmg|iso"
-            + r"|epub|dll|cnf|tgz|sha1|apk|war"
+            + r"|epub|dll|cnf|tgz|sha1|apk|war|odc|bib"
             + r"|thmx|mso|arff|rtf|jar|csv|img|jpeg|jpg|png"
             + r"|rm|smil|wmv|swf|wma|zip|rar|gz|ppsx|pps|ova)$", parsed.path.lower()):
             return False
@@ -217,7 +228,7 @@ def is_valid(url):
             + r"|wav|avi|mov|mpeg|ram|m4v|mkv|ogg|ogv|pdf"
             + r"|ps|eps|tex|ppt|pptx|doc|docx|xls|xlsx|names"
             + r"|data|dat|exe|bz2|tar|msi|bin|7z|psd|dmg|iso"
-            + r"|epub|dll|cnf|tgz|sha1|apk|war"
+            + r"|epub|dll|cnf|tgz|sha1|apk|war|odc|bib"
             + r"|thmx|mso|arff|rtf|jar|csv|img|jpeg|jpg|png"
             + r"|rm|smil|wmv|swf|wma|zip|rar|gz|ppsx|pps|ova)$", parsed.query.lower()):
             return False
@@ -227,7 +238,7 @@ def is_valid(url):
             + r"|wav|avi|mov|mpeg|ram|m4v|mkv|ogg|ogv|pdf"
             + r"|ps|eps|tex|ppt|pptx|doc|docx|xls|xlsx|names"
             + r"|data|dat|exe|bz2|tar|msi|bin|7z|psd|dmg|iso"
-            + r"|epub|dll|cnf|tgz|sha1|apk|war"
+            + r"|epub|dll|cnf|tgz|sha1|apk|war|odc|bib"
             + r"|thmx|mso|arff|rtf|jar|csv|img|jpeg|jpg|png"
             + r"|rm|smil|wmv|swf|wma|zip|rar|gz|ppsx|pps|ova).*$", parsed.query.lower()):
             return False
@@ -237,7 +248,7 @@ def is_valid(url):
             + r"|wav|avi|mov|mpeg|ram|m4v|mkv|ogg|ogv|pdf"
             + r"|ps|eps|tex|ppt|pptx|doc|docx|xls|xlsx|names"
             + r"|data|dat|exe|bz2|tar|msi|bin|7z|psd|dmg|iso"
-            + r"|epub|dll|cnf|tgz|sha1"
+            + r"|epub|dll|cnf|tgz|sha1|odc|bib"
             + r"|thmx|mso|arff|rtf|jar|csv|img|jpeg|jpg|png"
             + r"|rm|smil|wmv|swf|wma|zip|rar|gz|ppsx|pps|ova)/?.*$", parsed.path.lower()):
             return False
@@ -247,7 +258,7 @@ def is_valid(url):
             + r"|wav|avi|mov|mpeg|ram|m4v|mkv|ogg|ogv|pdf"
             + r"|ps|eps|tex|ppt|pptx|doc|docx|xls|xlsx|names"
             + r"|data|dat|exe|bz2|tar|msi|bin|7z|psd|dmg|iso"
-            + r"|epub|dll|cnf|tgz|sha1"
+            + r"|epub|dll|cnf|tgz|sha1|odc|bib"
             + r"|thmx|mso|arff|rtf|jar|csv|img|jpeg|jpg|png"
             + r"|rm|smil|wmv|swf|wma|zip|rar|gz|ppsx|pps|ova)/?.*$", parsed.query.lower()):
             return False
