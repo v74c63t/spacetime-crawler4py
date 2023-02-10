@@ -283,7 +283,7 @@ def is_valid(url):
         rp.read()
 
         # we use this to figure out the crawl delay for the site so we can adjust the politeness appropriately
-        if (rp.crawl_delay()): polite_time = rp.crawl_delay()
+        if (rp.crawl_delay(userAgent)): polite_time = rp.crawl_delay(userAgent)
 
         # if can_fetch returns true, the url is valid because the robots.txt file permits 
         # our user agent from crawling that particular url
